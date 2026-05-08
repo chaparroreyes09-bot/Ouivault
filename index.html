@@ -112,16 +112,25 @@ nav {
 
 .nav-item > a:hover, .nav-links > li > a:hover { color: var(--gold); }
 
+.nav-item { position: relative; }
+.nav-item::after {
+  content: '';
+  position: absolute;
+  bottom: -8px; left: 0; right: 0;
+  height: 12px;
+}
 .nav-item:hover .nav-dropdown { opacity: 1; pointer-events: all; transform: translateY(0); }
+.nav-item .nav-dropdown:hover { opacity: 1; pointer-events: all; transform: translateY(0); }
 
 .nav-dropdown {
-  position: absolute; top: calc(100% + 12px); left: 0;
+  position: absolute; top: calc(100% + 4px); left: 0;
   background: rgba(13,17,23,0.97);
   border: 1px solid var(--border); border-radius: 10px;
   padding: 0.5rem; min-width: 200px;
   opacity: 0; pointer-events: none;
   transform: translateY(-6px);
-  transition: all 0.2s;
+  transition: opacity 0.2s, transform 0.2s;
+  transition-delay: 0s;
   backdrop-filter: blur(20px);
   z-index: 200;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
@@ -1272,6 +1281,45 @@ footer {
   text-align: center; max-width: 900px; margin: 0 auto;
 }
 
+/* ─── FAQ ─── */
+.faq-item {
+  background: rgba(14,21,35,0.5);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.faq-item:hover { border-color: var(--border-hover); }
+.faq-q {
+  padding: 1.2rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--paper);
+}
+.faq-q .faq-arrow {
+  color: var(--gold);
+  font-size: 1rem;
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+.faq-item.open .faq-arrow { transform: rotate(180deg); }
+.faq-a {
+  display: none;
+  padding: 0 1.5rem 1.2rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.75;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+.faq-item.open .faq-a { display: block; }
+
 /* ─── LEGAL MODAL ─── */
 .legal-modal {
   background: var(--steel); border: 1px solid var(--border);
@@ -1449,7 +1497,7 @@ footer {
       <div class="nav-dropdown">
         <a href="#contact"><span class="dd-icon">📩</span> Business Enquiries</a>
         <a href="ouivault-support.html"><span class="dd-icon">💬</span> Support Chat</a>
-        <a href="#contact"><span class="dd-icon">🆘</span> Help Center / FAQ</a>
+        <a href="#faq"><span class="dd-icon">🆘</span> Help Center / FAQ</a>
       </div>
     </li>
     <li><a href="#wallets" class="nav-cta">Get Started →</a></li>
@@ -1616,7 +1664,7 @@ footer {
 
         <label class="checkbox-row">
           <input type="checkbox" id="agreeTerms">
-          <span>I understand my seed phrase must be stored securely offline. OuiVault will never ask for it. <a href="#">View terms.</a></span>
+          <span>I understand my seed phrase must be stored securely offline. OuiVault will never ask for it. <a href="#" onclick="openLegal('walletterms');return false;" style="color:var(--gold);text-decoration:none;">View terms.</a></span>
         </label>
 
         <button class="submit-btn" id="generateBtn" onclick="generateWallet()" disabled>
@@ -1930,32 +1978,11 @@ footer {
   <p class="section-sub">Follow OuiVault across platforms for product updates, security advisories, and crypto insights from our team.</p>
 
   <div class="community-grid">
-    <a href="https://facebook.com" target="_blank" class="community-card">
+    <a href="https://www.facebook.com/profile.php?id=61589400872890" target="_blank" class="community-card">
       <div class="community-icon">📘</div>
       <div class="community-info">
         <div class="community-name">Facebook</div>
-        <div class="community-handle">@OuiVaultOfficial</div>
-      </div>
-    </a>
-    <a href="https://x.com" target="_blank" class="community-card">
-      <div class="community-icon">𝕏</div>
-      <div class="community-info">
-        <div class="community-name">X / Twitter</div>
-        <div class="community-handle">@OuiVault</div>
-      </div>
-    </a>
-    <a href="https://t.me" target="_blank" class="community-card">
-      <div class="community-icon">✈️</div>
-      <div class="community-info">
-        <div class="community-name">Telegram</div>
-        <div class="community-handle">t.me/OuiVaultOfficial</div>
-      </div>
-    </a>
-    <a href="https://discord.com" target="_blank" class="community-card">
-      <div class="community-icon">🎮</div>
-      <div class="community-info">
-        <div class="community-name">Discord</div>
-        <div class="community-handle">discord.gg/ouivault</div>
+        <div class="community-handle">OuiVault Official</div>
       </div>
     </a>
     <a href="https://linkedin.com" target="_blank" class="community-card">
@@ -1963,13 +1990,6 @@ footer {
       <div class="community-info">
         <div class="community-name">LinkedIn</div>
         <div class="community-handle">OuiVault Ltd.</div>
-      </div>
-    </a>
-    <a href="https://reddit.com" target="_blank" class="community-card">
-      <div class="community-icon">🔴</div>
-      <div class="community-info">
-        <div class="community-name">Reddit</div>
-        <div class="community-handle">r/OuiVault</div>
       </div>
     </a>
   </div>
@@ -2016,21 +2036,21 @@ footer {
         <div class="ci-icon">📩</div>
         <div>
           <div class="ci-label">Business Enquiries</div>
-          <div class="ci-value">business@ouivault.io</div>
+          <div class="ci-value">business@ouivault.com</div>
         </div>
       </div>
       <div class="contact-info-card">
         <div class="ci-icon">🛡️</div>
         <div>
           <div class="ci-label">Security Disclosure</div>
-          <div class="ci-value">security@ouivault.io</div>
+          <div class="ci-value">security@ouivault.com</div>
         </div>
       </div>
       <div class="contact-info-card">
         <div class="ci-icon">📰</div>
         <div>
           <div class="ci-label">Press &amp; Media</div>
-          <div class="ci-value">press@ouivault.io</div>
+          <div class="ci-value">press@ouivault.com</div>
         </div>
       </div>
       <div class="contact-info-card">
@@ -2049,6 +2069,14 @@ footer {
       </div>
     </div>
   </div>
+</div>
+
+<!-- FAQ SECTION -->
+<div id="faq" style="padding:5rem 3rem;max-width:1200px;margin:0 auto;">
+  <div class="section-label">FAQ</div>
+  <h2 class="section-title">Frequently Asked Questions</h2>
+  <p class="section-sub">Everything you need to know about OuiVault, crypto custody, and getting started.</p>
+  <div id="faqList" style="display:flex;flex-direction:column;gap:0.8rem;margin-top:2rem;"></div>
 </div>
 
 <!-- COMPLIANCE STRIP -->
@@ -2099,10 +2127,7 @@ footer {
         Registered Address: [Jurisdiction TBC] · Launching Q4 2026
       </div>
       <div class="footer-socials">
-        <a href="https://facebook.com" target="_blank" class="social-btn" title="Facebook">📘</a>
-        <a href="https://x.com" target="_blank" class="social-btn" title="X / Twitter">𝕏</a>
-        <a href="https://t.me" target="_blank" class="social-btn" title="Telegram">✈️</a>
-        <a href="https://discord.com" target="_blank" class="social-btn" title="Discord">🎮</a>
+        <a href="https://www.facebook.com/profile.php?id=61589400872890" target="_blank" class="social-btn" title="Facebook">📘</a>
         <a href="https://linkedin.com" target="_blank" class="social-btn" title="LinkedIn">💼</a>
       </div>
     </div>
@@ -2460,7 +2485,7 @@ const LEGAL_CONTENT = {
       { h: 'Data We Collect', p: 'Currently:', list: ['Email addresses voluntarily submitted for early access notifications (stored securely, not shared with third parties).', 'Anonymous usage analytics (page views, feature interactions — no personally identifiable information).'] },
       { h: 'Data We Do NOT Collect', p: 'We never collect, store, or transmit:', list: ['Private keys', 'Seed phrases / mnemonics', 'Wallet addresses generated on-device', 'Biometric data'] },
       { h: 'Cookies', p: 'We use essential cookies only. No advertising or tracking cookies are used. You may opt out of analytics cookies at any time.' },
-      { h: 'GDPR Compliance', p: 'OuiVault is designed to comply with GDPR. EU users have the right to access, correct, and delete any personal data held. Contact privacy@ouivault.io to exercise these rights.' },
+      { h: 'GDPR Compliance', p: 'OuiVault is designed to comply with GDPR. EU users have the right to access, correct, and delete any personal data held. Contact privacy@ouivault.com to exercise these rights.' },
       { h: 'Data Retention', p: 'Email addresses for early access are retained until the user unsubscribes or requests deletion. Analytics data is retained in aggregate form for 24 months.' },
     ]
   },
@@ -2492,6 +2517,23 @@ const LEGAL_CONTENT = {
       { h: 'Full Custody Platform (Q4 2026)', p: 'The full custody platform will launch initially in the following jurisdictions, subject to regulatory clearance:', list: ['United Kingdom', 'European Union member states', 'Singapore', 'Japan', 'United Arab Emirates', 'Canada', 'Australia'] },
       { h: 'Restricted Jurisdictions', p: 'The full custody platform will NOT be available in jurisdictions subject to comprehensive OFAC sanctions or where cryptocurrency custody services are expressly prohibited by law. This includes but may not be limited to: North Korea, Iran, Cuba, Syria, and Crimea.' },
       { h: 'Regulatory Status', p: 'OuiVault Ltd. is in the process of engaging legal counsel in target jurisdictions ahead of the Q4 2026 launch. Regulatory status will be updated on this page as applications progress.' },
+    ]
+  },
+  walletterms: {
+    title: 'Wallet Generator — Terms of Use',
+    sections: [
+      { h: 'Client-Side Generation Only', p: 'The OuiVault Wallet Generator creates cryptographic key pairs and seed phrases entirely within your local browser. No private key, seed phrase, or wallet address is ever transmitted to OuiVault servers, stored in any database, or logged in any way. Generation is cryptographically isolated to your device.' },
+      { h: 'Your Responsibility for Security', p: 'By checking this box, you acknowledge and accept the following responsibilities:', list: [
+        'You must write down your seed phrase (12 or 24 words) on paper and store it offline in a secure physical location — not on any internet-connected device.',
+        'Your seed phrase is the master key to all funds in this wallet. Anyone who obtains it can permanently and irreversibly take all your assets.',
+        'OuiVault staff will NEVER ask for your seed phrase, private key, or password under any circumstances. Any message claiming otherwise is a scam.',
+        'If you lose your seed phrase and your device fails, access to your funds is permanently and irrecoverably lost. There is no password reset.',
+        'You are solely responsible for verifying all wallet addresses before sending any funds.'
+      ]},
+      { h: 'No Custody or Liability', p: 'The wallet generator is a tool, not a financial service. OuiVault does not hold, manage, or have any access to the wallets generated here. OuiVault Ltd. accepts no liability for loss of funds resulting from: (a) loss or theft of seed phrases; (b) device compromise; (c) user error; (d) software bugs in underlying blockchain libraries.' },
+      { h: 'Intended Use', p: 'This tool is provided for legitimate self-custody purposes only. You confirm that: (a) use of cryptocurrency wallets is legal in your jurisdiction; (b) you are not using this tool to evade sanctions, launder funds, or finance any prohibited activity; (c) you are at least 18 years of age.' },
+      { h: 'Accuracy of Generated Addresses', p: 'While OuiVault uses industry-standard BIP39 / BIP44 libraries (ethers.js), you should independently verify generated addresses against a second trusted tool before sending any significant funds. Always test with a small amount first.' },
+      { h: 'Open Source Libraries', p: 'Wallet generation uses the open-source ethers.js library (v6). You may independently audit the code running in this page by viewing the page source. OuiVault encourages technical users to verify the cryptographic implementation before use.' },
     ]
   },
   cookies: {
@@ -2531,6 +2573,67 @@ function closeModal(e) {
     document.getElementById('modalOverlay').classList.remove('open');
   }
 }
+
+// ─── FAQ ───
+const FAQ_DATA = [
+  {
+    q: "Are there incentives for OuiVault users?",
+    a: "Yes. For the first users onboarded to activate OuiVault-generated addresses, rewards are tiered by network priority: Bitcoin first, Solana second, EVM networks (Ethereum, BNB, Polygon, etc.) third, and Tron fourth. Further incentive details will be announced at the Q4 2026 full platform launch."
+  },
+  {
+    q: "Is OuiVault custodial or non-custodial?",
+    a: "The current wallet generator is fully non-custodial — your keys are generated inside your browser and never leave your device. The upcoming full OuiVault custody platform (Q4 2026) will offer a hybrid model: you retain sovereign key access while OuiVault provides institutional-grade backup, security layers, and recovery mechanisms."
+  },
+  {
+    q: "What is a seed phrase and why is it so important?",
+    a: "A seed phrase (also called a mnemonic) is a sequence of 12 or 24 random words that encodes the master private key of your wallet. Anyone who has your seed phrase has complete, permanent control of all funds in that wallet. Store it offline, in writing, in a secure location — never digitally. OuiVault will never ask you for it."
+  },
+  {
+    q: "Does OuiVault store my private keys or seed phrases?",
+    a: "No. The wallet generator operates entirely client-side. All cryptographic operations happen inside your browser using the open-source ethers.js library. Nothing is transmitted to OuiVault servers. You can verify this by viewing the page source or running the page offline."
+  },
+  {
+    q: "Which blockchain networks does OuiVault support?",
+    a: "OuiVault currently supports 11 networks: Ethereum, BNB Chain, Polygon, Avalanche, Arbitrum, Optimism, Base, Fantom, Cronos (all EVM-compatible), plus Tron, Solana, and Bitcoin. Additional networks will be added ahead of and following the Q4 2026 full platform launch."
+  },
+  {
+    q: "What is hybrid custody, and how does it protect me?",
+    a: "OuiVault's hybrid custody model (launching Q4 2026) combines the security of self-custody with the safety net of institutional infrastructure. Your assets are tiered across hot, warm, and cold storage layers automatically by an AI risk engine. Keys are sharded using Shamir's Secret Sharing across geographically distributed, air-gapped HSMs — meaning no single entity, including OuiVault, can access your funds alone."
+  },
+  {
+    q: "What happens if I lose my seed phrase?",
+    a: "With the current wallet generator, losing your seed phrase means permanent, irrecoverable loss of access to those funds. There is no 'forgot password' in crypto. The upcoming OuiVault custody platform introduces social recovery and distributed key sharding as safety mechanisms — but even then, maintaining your own offline backup is strongly recommended."
+  },
+  {
+    q: "When is the full OuiVault platform launching?",
+    a: "The full OuiVault custody platform — including AI risk tiering, Shamir's Secret Sharing vaults, biometric authentication, time-locked withdrawals, and the Relationship Officer support network — is targeting a Q4 2026 launch in select jurisdictions, subject to regulatory clearance. Sign up for early access notifications on the homepage."
+  },
+  {
+    q: "How is OuiVault different from a hardware wallet?",
+    a: "Hardware wallets require purchasing a physical device, managing firmware updates, and are lost or damaged at the owner's risk. OuiVault provides an accessible browser-based interface today, and will offer superior institutional-grade security features at launch — including distributed key sharding, AI-driven risk management, and biometric authentication — without requiring any hardware purchase."
+  }
+];
+
+function renderFAQ() {
+  const el = document.getElementById('faqList');
+  if (!el) return;
+  el.innerHTML = FAQ_DATA.map((item, i) => `
+    <div class="faq-item" id="faq-${i}">
+      <div class="faq-q" onclick="toggleFAQ(${i})">
+        <span>${item.q}</span>
+        <span class="faq-arrow">▾</span>
+      </div>
+      <div class="faq-a">${item.a}</div>
+    </div>
+  `).join('');
+}
+
+function toggleFAQ(i) {
+  const item = document.getElementById('faq-' + i);
+  item.classList.toggle('open');
+}
+
+renderFAQ();
 
 // ─── UTILS ───
 function base58Encode(bytes) {
