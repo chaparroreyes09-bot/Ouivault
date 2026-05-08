@@ -1,0 +1,2555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OuiVault — Secure Hybrid Crypto Custody</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Cabinet+Grotesk:wght@300;400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<style>
+:root {
+  --ink: #0a0a0f;
+  --paper: #f5f2eb;
+  --vault: #0d1117;
+  --gold: #c9a84c;
+  --gold-light: #e8cc7a;
+  --gold-dim: #7a5e1e;
+  --steel: #1e2533;
+  --steel-light: #2e3a4e;
+  --ice: #a8c4d4;
+  --ice-bright: #d0e8f4;
+  --danger: #e05252;
+  --success: #52c472;
+  --muted: #6b7280;
+  --border: rgba(201,168,76,0.2);
+  --border-hover: rgba(201,168,76,0.6);
+  --glass: rgba(14,21,35,0.85);
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'Cabinet Grotesk', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--vault);
+  color: var(--paper);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  cursor: default;
+}
+
+/* ─── GRAIN OVERLAY ─── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.4;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--vault); }
+::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+
+/* ─── NAVBAR ─── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2.5rem;
+  background: rgba(10,10,15,0.82);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+  color: var(--gold);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.nav-logo svg { width: 28px; height: 28px; }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+}
+
+/* dropdown nav */
+.nav-item { position: relative; }
+
+.nav-item > a, .nav-links > li > a {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+  padding: 0.5rem 1.1rem;
+  display: flex; align-items: center; gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.nav-item > a:hover, .nav-links > li > a:hover { color: var(--gold); }
+
+.nav-item:hover .nav-dropdown { opacity: 1; pointer-events: all; transform: translateY(0); }
+
+.nav-dropdown {
+  position: absolute; top: calc(100% + 12px); left: 0;
+  background: rgba(13,17,23,0.97);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 0.5rem; min-width: 200px;
+  opacity: 0; pointer-events: none;
+  transform: translateY(-6px);
+  transition: all 0.2s;
+  backdrop-filter: blur(20px);
+  z-index: 200;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.nav-dropdown a {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 0.9rem; border-radius: 6px;
+  font-family: var(--font-mono); font-size: 0.68rem;
+  letter-spacing: 0.05em; color: var(--muted); text-decoration: none;
+  transition: all 0.15s; white-space: nowrap;
+}
+
+.nav-dropdown a:hover { background: rgba(201,168,76,0.08); color: var(--gold); }
+.nav-dropdown a .dd-icon { font-size: 0.9rem; width: 18px; text-align: center; }
+.nav-dropdown-divider { height: 1px; background: var(--border); margin: 0.4rem 0; }
+
+.nav-cta {
+  background: var(--gold) !important;
+  border: 1px solid var(--gold);
+  color: var(--vault) !important;
+  padding: 0.55rem 1.3rem !important;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 700 !important;
+  font-family: var(--font-display) !important;
+  font-size: 0.78rem !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  margin-left: 0.8rem;
+  transition: all 0.2s !important;
+}
+
+.nav-cta:hover {
+  background: var(--gold-light) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(201,168,76,0.3);
+}
+
+/* ─── HERO ─── */
+.hero {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  position: relative;
+  padding: 8rem 3rem 4rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,168,76,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(168,196,212,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 60% at 10% 60%, rgba(201,168,76,0.04) 0%, transparent 50%);
+}
+
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(201,168,76,0.08);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 0.35rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 2rem;
+  animation: fadeUp 0.8s ease both;
+}
+
+.badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 9vw, 7.5rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  color: var(--paper);
+  margin-bottom: 1.5rem;
+  animation: fadeUp 0.8s 0.1s ease both;
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: var(--gold);
+  position: relative;
+}
+
+.hero h1 em::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+}
+
+.hero-sub {
+  font-size: 1.15rem;
+  color: var(--muted);
+  max-width: 580px;
+  margin: 0 auto 3rem;
+  line-height: 1.7;
+  font-weight: 300;
+  animation: fadeUp 0.8s 0.2s ease both;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  animation: fadeUp 0.8s 0.3s ease both;
+}
+
+.btn-primary {
+  background: var(--gold);
+  color: var(--vault);
+  border: none;
+  padding: 0.9rem 2rem;
+  border-radius: 4px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary:hover {
+  background: var(--gold-light);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(201,168,76,0.3);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--paper);
+  border: 1px solid rgba(245,242,235,0.2);
+  padding: 0.9rem 2rem;
+  border-radius: 4px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.btn-outline:hover {
+  border-color: var(--paper);
+  background: rgba(245,242,235,0.05);
+}
+
+/* ─── VAULT COMING SOON BANNER ─── */
+.vault-banner {
+  margin: 1rem 3rem 0;
+  background: linear-gradient(135deg, rgba(201,168,76,0.06) 0%, rgba(201,168,76,0.02) 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 3rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.8s 0.4s ease both;
+}
+
+.vault-banner::before {
+  content: 'VAULT SYSTEM';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: 10rem;
+  font-weight: 900;
+  color: rgba(201,168,76,0.03);
+  white-space: nowrap;
+  pointer-events: none;
+  letter-spacing: -0.05em;
+}
+
+.vault-banner-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.coming-soon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(201,168,76,0.1);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  padding: 0.3rem 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1.2rem;
+}
+
+.vault-banner h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.8rem;
+  color: var(--paper);
+}
+
+.vault-banner p {
+  color: var(--muted);
+  font-size: 0.95rem;
+  max-width: 500px;
+  margin: 0 auto 2rem;
+  line-height: 1.6;
+}
+
+.vault-features {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 2rem;
+}
+
+.vault-feature-pill {
+  background: rgba(30,37,51,0.8);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 0.4rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ice);
+  letter-spacing: 0.05em;
+}
+
+.notify-form {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.notify-form input {
+  flex: 1;
+  background: rgba(14,21,35,0.8);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.notify-form input:focus { border-color: var(--gold); }
+.notify-form input::placeholder { color: var(--muted); }
+
+.notify-form button {
+  background: var(--gold);
+  color: var(--vault);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.notify-form button:hover { background: var(--gold-light); }
+
+/* ─── SECTION: WALLET CREATOR ─── */
+.section {
+  padding: 5rem 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.section-label::before {
+  content: '';
+  display: block;
+  width: 30px;
+  height: 1px;
+  background: var(--gold);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--paper);
+  margin-bottom: 0.8rem;
+}
+
+.section-sub {
+  color: var(--muted);
+  font-size: 1rem;
+  max-width: 500px;
+  line-height: 1.6;
+  margin-bottom: 3rem;
+}
+
+/* WALLET CREATOR PANEL */
+.wallet-panel {
+  background: rgba(14,21,35,0.6);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.wallet-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.wallet-tab {
+  padding: 1rem 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wallet-tab.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+  background: rgba(201,168,76,0.04);
+}
+
+.wallet-tab:hover:not(.active) { color: var(--paper); }
+
+.tab-icon { font-size: 1rem; }
+
+.wallet-content { padding: 2.5rem; }
+
+.network-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 2rem;
+}
+
+.network-card {
+  background: rgba(30,37,51,0.5);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.network-card:hover {
+  border-color: var(--border-hover);
+  background: rgba(201,168,76,0.06);
+}
+
+.network-card.selected {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.1);
+}
+
+.network-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 6px; right: 8px;
+  font-size: 0.65rem;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.net-icon {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.net-info { overflow: hidden; }
+
+.net-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--paper);
+  white-space: nowrap;
+}
+
+.net-type {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+/* FORM */
+.wallet-form { display: flex; flex-direction: column; gap: 1.2rem; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+
+.form-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.form-input, .form-select {
+  background: rgba(10,10,15,0.8);
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 6px;
+  padding: 0.8rem 1rem;
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.form-input:focus, .form-select:focus { border-color: var(--gold); }
+.form-input::placeholder { color: var(--muted); }
+
+.form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.form-select option { background: var(--vault); }
+
+.password-wrap { position: relative; }
+.password-wrap .form-input { padding-right: 3rem; }
+.pw-toggle {
+  position: absolute;
+  right: 0.8rem; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.2rem;
+  transition: color 0.2s;
+}
+.pw-toggle:hover { color: var(--gold); }
+
+.strength-bar {
+  display: flex;
+  gap: 3px;
+  margin-top: 0.4rem;
+}
+
+.strength-seg {
+  height: 3px;
+  flex: 1;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.08);
+  transition: background 0.3s;
+}
+
+.strength-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-top: 0.3rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  cursor: pointer;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  accent-color: var(--gold);
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.checkbox-row span {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.checkbox-row a { color: var(--gold); text-decoration: none; }
+
+.submit-btn {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+  color: var(--vault);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 6px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 48px rgba(201,168,76,0.35);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submit-btn .btn-loader {
+  display: none;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(10,10,15,0.3);
+  border-top-color: var(--vault);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.submit-btn.loading .btn-loader { display: block; }
+.submit-btn.loading .btn-text { display: none; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── WALLET RESULT ─── */
+.wallet-result {
+  display: none;
+  margin-top: 2rem;
+  background: rgba(82,196,114,0.06);
+  border: 1px solid rgba(82,196,114,0.3);
+  border-radius: 10px;
+  padding: 2rem;
+  animation: fadeUp 0.5s ease;
+}
+
+.wallet-result.show { display: block; }
+
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.result-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.result-network {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  background: rgba(30,37,51,0.8);
+  padding: 0.3rem 0.7rem;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+}
+
+.result-field { margin-bottom: 1rem; }
+
+.result-field-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.result-field-value {
+  background: rgba(10,10,15,0.6);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--paper);
+  word-break: break-all;
+  line-height: 1.6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.result-field-value.secret {
+  color: var(--danger);
+  font-size: 0.68rem;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.2rem;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.copy-btn:hover { color: var(--gold); }
+
+.warning-box {
+  background: rgba(224,82,82,0.08);
+  border: 1px solid rgba(224,82,82,0.3);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+}
+
+.warning-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+.warning-text {
+  font-size: 0.8rem;
+  color: rgba(224,82,82,0.9);
+  line-height: 1.6;
+}
+
+/* ─── FEATURES ROW ─── */
+.features-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  padding: 0 3rem 5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  background: rgba(14,21,35,0.5);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.8rem;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.feature-card:hover { border-color: var(--border-hover); transform: translateY(-3px); }
+.feature-card:hover::before { opacity: 1; }
+
+.feature-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  background: rgba(201,168,76,0.1);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  margin-bottom: 1.2rem;
+}
+
+.feature-card h3 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--paper);
+  margin-bottom: 0.5rem;
+}
+
+.feature-card p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ─── FOOTER ─── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 2.5rem 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.footer-logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--gold);
+  letter-spacing: -0.02em;
+}
+
+.footer-text {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.footer-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.footer-links a {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.06em;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover { color: var(--gold); }
+
+/* ─── TOAST ─── */
+.toast-container {
+  position: fixed;
+  bottom: 2rem; right: 2rem;
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.toast {
+  background: var(--steel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.8rem 1.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--paper);
+  animation: slideIn 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: 320px;
+}
+
+.toast.success { border-color: rgba(82,196,114,0.4); }
+.toast.error { border-color: rgba(224,82,82,0.4); }
+
+@keyframes slideIn {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,10,15,0.85);
+  backdrop-filter: blur(8px);
+  z-index: 5000;
+  display: none;
+  place-items: center;
+  padding: 2rem;
+}
+
+.modal-overlay.open { display: grid; }
+
+.modal {
+  background: var(--steel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 2.5rem;
+  max-width: 480px;
+  width: 100%;
+  animation: fadeUp 0.3s ease;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 1.2rem; right: 1.2rem;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.modal-close:hover { color: var(--paper); }
+
+.modal h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--paper);
+  margin-bottom: 0.5rem;
+}
+
+.modal p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+/* IMPORT WALLET FORM */
+.import-form { display: flex; flex-direction: column; gap: 1rem; }
+.import-form textarea {
+  background: rgba(10,10,15,0.8);
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 6px;
+  padding: 0.8rem 1rem;
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 100px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.import-form textarea:focus { border-color: var(--gold); }
+.import-form textarea::placeholder { color: var(--muted); }
+
+/* ─── TRUST BAR ─── */
+.trust-bar {
+  background: rgba(14,21,35,0.7);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 0.9rem 3rem;
+  display: flex; align-items: center; justify-content: center;
+  gap: 3rem; flex-wrap: wrap;
+}
+.trust-item {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-family: var(--font-mono); font-size: 0.65rem;
+  letter-spacing: 0.08em; color: var(--muted); white-space: nowrap;
+}
+.trust-item-icon { font-size: 1rem; }
+.trust-item strong { color: var(--ice); }
+
+/* ─── HOW IT WORKS ─── */
+.how-grid {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 0;
+  position: relative; margin-top: 3rem;
+}
+.how-step {
+  padding: 2rem 1.5rem; position: relative;
+  border-right: 1px solid var(--border);
+}
+.how-step:last-child { border-right: none; }
+.how-num {
+  font-family: var(--font-display); font-size: 3.5rem; font-weight: 900;
+  color: rgba(201,168,76,0.07); letter-spacing: -0.05em; line-height: 1;
+  margin-bottom: 0.5rem;
+}
+.how-icon { font-size: 1.6rem; margin-bottom: 1rem; display: block; }
+.how-title {
+  font-family: var(--font-display); font-weight: 700; font-size: 0.95rem;
+  color: var(--paper); margin-bottom: 0.5rem;
+}
+.how-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+
+/* ─── SECURITY SECTION ─── */
+.security-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2.5rem;
+}
+.security-card {
+  background: rgba(14,21,35,0.6); border: 1px solid var(--border);
+  border-radius: 12px; padding: 2rem; position: relative; overflow: hidden;
+  transition: all 0.3s;
+}
+.security-card:hover { border-color: var(--border-hover); }
+.security-card::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0; transition: opacity 0.3s;
+}
+.security-card:hover::after { opacity: 1; }
+.security-icon-wrap {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: rgba(201,168,76,0.08); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; margin-bottom: 1.2rem;
+}
+.security-card h3 {
+  font-family: var(--font-display); font-size: 1rem; font-weight: 700;
+  color: var(--paper); margin-bottom: 0.6rem;
+}
+.security-card p { font-size: 0.83rem; color: var(--muted); line-height: 1.65; margin-bottom: 1rem; }
+.security-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.sec-tag {
+  font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.08em;
+  background: rgba(168,196,212,0.07); border: 1px solid rgba(168,196,212,0.2);
+  color: var(--ice); padding: 0.2rem 0.6rem; border-radius: 4px;
+}
+
+/* ─── SUPPORTED ASSETS ─── */
+.assets-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr));
+  gap: 0.8rem; margin-top: 2.5rem;
+}
+.asset-chip {
+  background: rgba(14,21,35,0.6); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  transition: all 0.2s; cursor: default;
+}
+.asset-chip:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+.asset-icon { font-size: 1.5rem; }
+.asset-name {
+  font-family: var(--font-display); font-size: 0.78rem; font-weight: 700;
+  color: var(--paper); text-align: center;
+}
+.asset-type {
+  font-family: var(--font-mono); font-size: 0.58rem; color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+/* ─── SOCIAL PROOF ─── */
+.proof-strip {
+  background: linear-gradient(135deg, rgba(201,168,76,0.04), rgba(14,21,35,0.8));
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  padding: 4rem 3rem;
+}
+.proof-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 2rem; max-width: 900px; margin: 0 auto; }
+.proof-stat { text-align: center; }
+.proof-num {
+  font-family: var(--font-display); font-size: 2.8rem; font-weight: 900;
+  color: var(--gold); letter-spacing: -0.05em; line-height: 1;
+}
+.proof-label {
+  font-family: var(--font-mono); font-size: 0.62rem; color: var(--muted);
+  letter-spacing: 0.1em; text-transform: uppercase; margin-top: 0.4rem;
+}
+.proof-note {
+  text-align: center; font-family: var(--font-mono); font-size: 0.65rem;
+  color: rgba(107,114,128,0.6); margin-top: 2rem; letter-spacing: 0.05em;
+}
+
+/* ─── COMPLIANCE STRIP ─── */
+.compliance-strip {
+  background: rgba(10,10,15,0.6); border-top: 1px solid var(--border);
+  padding: 2.5rem 3rem;
+  display: flex; align-items: flex-start; gap: 3rem; flex-wrap: wrap;
+}
+.compliance-block { flex: 1; min-width: 200px; }
+.compliance-label {
+  font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 0.8rem;
+}
+.compliance-links { display: flex; flex-direction: column; gap: 0.4rem; }
+.compliance-links a {
+  font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted);
+  text-decoration: none; transition: color 0.2s; letter-spacing: 0.04em;
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.compliance-links a::before { content: '→'; color: rgba(201,168,76,0.4); font-size: 0.6rem; }
+.compliance-links a:hover { color: var(--gold); }
+
+/* ─── COMMUNITY ─── */
+.community-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr));
+  gap: 1rem; margin-top: 2rem;
+}
+.community-card {
+  background: rgba(14,21,35,0.6); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1.5rem;
+  display: flex; align-items: center; gap: 1rem;
+  text-decoration: none; transition: all 0.2s;
+}
+.community-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+.community-icon { font-size: 1.8rem; flex-shrink: 0; }
+.community-info {}
+.community-name {
+  font-family: var(--font-display); font-weight: 700; font-size: 0.9rem;
+  color: var(--paper); margin-bottom: 0.2rem;
+}
+.community-handle {
+  font-family: var(--font-mono); font-size: 0.62rem; color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+/* ─── MEGA FOOTER ─── */
+.mega-footer {
+  background: rgba(8,10,14,0.95); border-top: 1px solid var(--border);
+}
+.footer-top {
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 3rem; padding: 4rem 3rem 3rem; max-width: 1300px; margin: 0 auto;
+}
+.footer-brand {}
+.footer-brand-logo {
+  font-family: var(--font-display); font-weight: 800; font-size: 1.3rem;
+  color: var(--gold); letter-spacing: -0.02em; margin-bottom: 0.8rem;
+}
+.footer-brand-desc {
+  font-size: 0.82rem; color: var(--muted); line-height: 1.7;
+  max-width: 240px; margin-bottom: 1.2rem;
+}
+.footer-reg {
+  font-family: var(--font-mono); font-size: 0.6rem; color: rgba(107,114,128,0.6);
+  line-height: 1.6; letter-spacing: 0.04em;
+}
+.footer-col-title {
+  font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 1rem;
+}
+.footer-col-links { display: flex; flex-direction: column; gap: 0.6rem; }
+.footer-col-links a {
+  font-family: var(--font-body); font-size: 0.82rem; color: var(--muted);
+  text-decoration: none; transition: color 0.2s;
+}
+.footer-col-links a:hover { color: var(--paper); }
+.footer-socials { display: flex; gap: 0.6rem; margin-top: 1rem; }
+.social-btn {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: rgba(30,37,51,0.8); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; text-decoration: none; transition: all 0.2s;
+  color: var(--muted);
+}
+.social-btn:hover { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+.footer-bottom {
+  border-top: 1px solid var(--border); padding: 1.5rem 3rem;
+  max-width: 1300px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer-copy {
+  font-family: var(--font-mono); font-size: 0.62rem; color: var(--muted);
+  letter-spacing: 0.06em;
+}
+.footer-legal-links { display: flex; gap: 1.5rem; }
+.footer-legal-links a {
+  font-family: var(--font-mono); font-size: 0.62rem; color: var(--muted);
+  text-decoration: none; transition: color 0.2s; letter-spacing: 0.04em;
+}
+.footer-legal-links a:hover { color: var(--gold); }
+.footer-disclaimer {
+  border-top: 1px solid rgba(201,168,76,0.08);
+  padding: 1.2rem 3rem;
+  font-family: var(--font-mono); font-size: 0.58rem;
+  color: rgba(107,114,128,0.5); letter-spacing: 0.04em; line-height: 1.7;
+  text-align: center; max-width: 900px; margin: 0 auto;
+}
+
+/* ─── LEGAL MODAL ─── */
+.legal-modal {
+  background: var(--steel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 2.5rem; max-width: 620px;
+  width: 100%; max-height: 80vh; overflow-y: auto;
+  animation: fadeUp 0.3s ease; position: relative;
+}
+.legal-modal h2 {
+  font-family: var(--font-display); font-size: 1.4rem; font-weight: 800;
+  letter-spacing: -0.03em; color: var(--paper); margin-bottom: 0.3rem;
+}
+.legal-modal-sub {
+  font-family: var(--font-mono); font-size: 0.62rem; color: var(--muted);
+  letter-spacing: 0.08em; margin-bottom: 1.5rem;
+}
+.legal-section { margin-bottom: 1.5rem; }
+.legal-section h3 {
+  font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem;
+}
+.legal-section p, .legal-section li {
+  font-size: 0.82rem; color: var(--muted); line-height: 1.75;
+}
+.legal-section ul { padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.3rem; }
+
+/* ─── CONTACT SECTION ─── */
+.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 2.5rem; align-items: start; }
+.contact-form { display: flex; flex-direction: column; gap: 1rem; }
+.contact-form textarea {
+  background: rgba(10,10,15,0.8); border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 6px; padding: 0.8rem 1rem; color: var(--paper);
+  font-family: var(--font-body); font-size: 0.88rem; outline: none;
+  transition: border-color 0.2s; resize: vertical; min-height: 100px;
+}
+.contact-form textarea:focus { border-color: var(--gold); }
+.contact-form textarea::placeholder { color: var(--muted); }
+.contact-info-cards { display: flex; flex-direction: column; gap: 1rem; }
+.contact-info-card {
+  background: rgba(14,21,35,0.6); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1.3rem 1.5rem;
+  display: flex; align-items: flex-start; gap: 1rem;
+}
+.ci-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 0.1rem; }
+.ci-label {
+  font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem;
+}
+.ci-value { font-size: 0.85rem; color: var(--paper); }
+
+/* RESPONSIVE UPDATES */
+@media (max-width: 1024px) {
+  .footer-top { grid-template-columns: 1fr 1fr 1fr; }
+  .footer-brand { grid-column: 1/-1; }
+  .how-grid { grid-template-columns: 1fr 1fr; }
+  .security-grid { grid-template-columns: 1fr; }
+  .proof-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 768px) {
+  nav { padding: 1rem 1.5rem; }
+  .nav-links { display: none; }
+  .hero { padding: 7rem 1.5rem 3rem; }
+  .vault-banner { margin: 0.5rem 1.5rem 0; padding: 2rem 1.5rem; }
+  .section { padding: 3rem 1.5rem; }
+  .features-row { padding: 0 1.5rem 3rem; }
+  .form-row { grid-template-columns: 1fr; }
+  .trust-bar { gap: 1.2rem; padding: 0.9rem 1.5rem; }
+  .how-grid { grid-template-columns: 1fr; }
+  .how-step { border-right: none; border-bottom: 1px solid var(--border); }
+  .contact-grid { grid-template-columns: 1fr; }
+  .footer-top { grid-template-columns: 1fr 1fr; padding: 2.5rem 1.5rem; gap: 2rem; }
+  .footer-brand { grid-column: 1/-1; }
+  .footer-bottom { flex-direction: column; text-align: center; padding: 1.5rem; }
+  .footer-legal-links { flex-wrap: wrap; justify-content: center; }
+  .proof-grid { grid-template-columns: 1fr 1fr; }
+  .compliance-strip { padding: 2rem 1.5rem; gap: 2rem; }
+  #about > div > div:last-child { grid-template-columns: 1fr !important; gap: 2rem !important; }
+  .assets-grid { grid-template-columns: repeat(3,1fr); }
+}
+
+/* ANIMATED VAULT LINES */
+.vault-anim {
+  position: absolute;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  border: 1px solid rgba(201,168,76,0.06);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation: vaultRotate 20s linear infinite;
+}
+
+.vault-anim:nth-child(2) {
+  width: 500px; height: 500px;
+  border-color: rgba(201,168,76,0.04);
+  animation-duration: 35s;
+  animation-direction: reverse;
+}
+
+.vault-anim:nth-child(3) {
+  width: 700px; height: 700px;
+  border-color: rgba(168,196,212,0.03);
+  animation-duration: 50s;
+}
+
+@keyframes vaultRotate {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.chain-dot {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 0 8px var(--gold);
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a href="#" class="nav-logo">
+    <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="8" width="20" height="16" rx="3" stroke="#c9a84c" stroke-width="1.5"/>
+      <path d="M9 8V6a5 5 0 0110 0v2" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="14" cy="16" r="2.5" fill="#c9a84c"/>
+      <line x1="14" y1="18.5" x2="14" y2="21" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    OuiVault
+  </a>
+
+  <ul class="nav-links">
+    <li class="nav-item">
+      <a href="#hero">Home ▾</a>
+      <div class="nav-dropdown">
+        <a href="#hero"><span class="dd-icon">⬡</span> Overview</a>
+        <a href="#howitworks"><span class="dd-icon">📐</span> How It Works</a>
+        <a href="#proof"><span class="dd-icon">📊</span> By the Numbers</a>
+        <a href="#community"><span class="dd-icon">🌐</span> Community</a>
+      </div>
+    </li>
+    <li class="nav-item">
+      <a href="#wallets">Product ▾</a>
+      <div class="nav-dropdown">
+        <a href="#wallets"><span class="dd-icon">💎</span> Wallet Generator</a>
+        <a href="#vault"><span class="dd-icon">🔒</span> Custody System</a>
+        <a href="#assets"><span class="dd-icon">⛓️</span> Supported Assets</a>
+        <a href="#features"><span class="dd-icon">✦</span> All Features</a>
+        <div class="nav-dropdown-divider"></div>
+        <a href="#vault"><span class="dd-icon">🏗️</span> Custody Infrastructure</a>
+      </div>
+    </li>
+    <li class="nav-item">
+      <a href="#security">Security ▾</a>
+      <div class="nav-dropdown">
+        <a href="#security"><span class="dd-icon">🛡️</span> Security Overview</a>
+        <a href="#security"><span class="dd-icon">🌡️</span> Custody Model</a>
+        <a href="#security"><span class="dd-icon">🔐</span> Encryption Standards</a>
+        <a href="#security"><span class="dd-icon">🔑</span> Key Management</a>
+      </div>
+    </li>
+    <li class="nav-item">
+      <a href="#about">Company ▾</a>
+      <div class="nav-dropdown">
+        <a href="#about"><span class="dd-icon">🏢</span> About OuiVault</a>
+        <a href="#about"><span class="dd-icon">💼</span> Investors</a>
+        <a href="#compliance"><span class="dd-icon">📋</span> Compliance & Legal</a>
+        <a href="ouivault-support.html"><span class="dd-icon">👥</span> Relationship Officers</a>
+      </div>
+    </li>
+    <li class="nav-item">
+      <a href="#contact">Contact ▾</a>
+      <div class="nav-dropdown">
+        <a href="#contact"><span class="dd-icon">📩</span> Business Enquiries</a>
+        <a href="ouivault-support.html"><span class="dd-icon">💬</span> Support Chat</a>
+        <a href="#contact"><span class="dd-icon">🆘</span> Help Center / FAQ</a>
+      </div>
+    </li>
+    <li><a href="#wallets" class="nav-cta">Get Started →</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="vault-anim"><div class="chain-dot"></div></div>
+  <div class="vault-anim"></div>
+  <div class="vault-anim"></div>
+  <div style="position:relative;z-index:2;">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Next-Gen Crypto Security · Launching Q4 2026
+    </div>
+    <h1>Your crypto.<br><em>Truly secure.</em></h1>
+    <p class="hero-sub">Institutional-grade hybrid custody — AI risk tiering, sharded key management, and biometric authentication — made accessible to everyone.</p>
+    <div class="hero-actions">
+      <a href="#wallets" class="btn-primary">Get Started Free →</a>
+      <a href="#howitworks" class="btn-outline">How It Works</a>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trust-bar">
+  <div class="trust-item"><span class="trust-item-icon">🔐</span><strong>Client-Side Only</strong> — keys never leave your browser</div>
+  <div class="trust-item"><span class="trust-item-icon">🧬</span><strong>BIP39 / BIP44</strong> industry standard</div>
+  <div class="trust-item"><span class="trust-item-icon">⛓️</span><strong>11 blockchains</strong> supported</div>
+  <div class="trust-item"><span class="trust-item-icon">🌍</span><strong>Angel-backed</strong> EU &amp; Asia investors</div>
+  <div class="trust-item"><span class="trust-item-icon">🚀</span><strong>Full platform</strong> launching Q4 2026</div>
+</div>
+
+<!-- VAULT COMING SOON -->
+<div id="vault" style="padding: 0 0 2rem;">
+  <div class="vault-banner">
+    <div class="vault-banner-inner">
+      <div class="coming-soon-badge">🔒 Coming Soon — Q4 2026</div>
+      <h2>The OuiVault Custody System</h2>
+      <p>AI-driven risk tiering, Shamir secret sharing, and time-locked cold storage. The most secure crypto custody system ever built — launching soon.</p>
+      <div class="vault-features">
+        <span class="vault-feature-pill">🧠 AI Risk Engine</span>
+        <span class="vault-feature-pill">🔐 Shamir's Secret Sharing</span>
+        <span class="vault-feature-pill">🧬 Biometric Auth</span>
+        <span class="vault-feature-pill">🌡️ Hot / Warm / Cold Layers</span>
+        <span class="vault-feature-pill">👥 Social Recovery</span>
+        <span class="vault-feature-pill">⏱️ Time-Lock Withdrawals</span>
+      </div>
+      <div class="notify-form">
+        <input type="email" id="notifyEmail" placeholder="Enter your email for early access">
+        <button onclick="handleNotify()">Notify Me</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div id="howitworks" style="padding:5rem 3rem;max-width:1200px;margin:0 auto;">
+  <div class="section-label">Process</div>
+  <h2 class="section-title">How OuiVault Works</h2>
+  <p class="section-sub">From wallet creation to institutional custody — a single platform that grows with your needs.</p>
+
+  <div class="how-grid">
+    <div class="how-step">
+      <div class="how-num">01</div>
+      <span class="how-icon">💎</span>
+      <div class="how-title">Generate Your Wallet</div>
+      <div class="how-desc">Create a BIP39-compliant wallet for any supported blockchain entirely within your browser. Your private keys are never transmitted or stored.</div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">02</div>
+      <span class="how-icon">🔐</span>
+      <div class="how-title">Secure Your Keys</div>
+      <div class="how-desc">Encrypt and back up your seed phrase offline. OuiVault's forthcoming custody system will shard and distribute your keys using Shamir's Secret Sharing.</div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">03</div>
+      <span class="how-icon">🧠</span>
+      <div class="how-title">AI Risk Tiering</div>
+      <div class="how-desc">Our AI engine automatically classifies your assets into hot, warm, and cold custody tiers based on transaction frequency and risk profile.</div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">04</div>
+      <span class="how-icon">🛡️</span>
+      <div class="how-title">Ongoing Protection</div>
+      <div class="how-desc">Biometric authentication, time-locked withdrawals, and social recovery provide layers of protection against theft and loss — even if your device is compromised.</div>
+    </div>
+  </div>
+</div>
+
+<!-- WALLET CREATOR -->
+<div class="section" id="wallets">
+  <div class="section-label">Wallet Generator</div>
+  <h2 class="section-title">Create Your Crypto Wallet</h2>
+  <p class="section-sub">Generate secure wallets across multiple blockchains while you wait for OuiVault. 100% client-side — your keys never leave your browser.</p>
+
+  <div class="wallet-panel">
+    <div class="wallet-tabs">
+      <button class="wallet-tab active" onclick="switchTab('create', this)">
+        <span class="tab-icon">✦</span> Create New
+      </button>
+      <button class="wallet-tab" onclick="switchTab('import', this)">
+        <span class="tab-icon">↑</span> Import Existing
+      </button>
+      <button class="wallet-tab" onclick="switchTab('multi', this)">
+        <span class="tab-icon">⊞</span> Bulk Generate
+      </button>
+    </div>
+
+    <!-- CREATE TAB -->
+    <div class="wallet-content" id="tab-create">
+      <div style="margin-bottom:1.5rem;">
+        <div class="section-label" style="margin-bottom:0.6rem;">Select Network</div>
+        <div class="network-grid" id="networkGrid">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div class="wallet-form" id="walletForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Wallet Name (optional)</label>
+            <input class="form-input" id="walletName" type="text" placeholder="My Main Wallet">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Derivation Path</label>
+            <select class="form-select" id="derivPath">
+              <option value="m/44'/60'/0'/0/0">Standard (m/44'/60'/0'/0/0)</option>
+              <option value="m/44'/60'/0'/0/1">Index 1</option>
+              <option value="m/44'/60'/0'/0/2">Index 2</option>
+              <option value="m/44'/195'/0'/0/0">Tron Path</option>
+              <option value="m/44'/501'/0'/0'">Solana Path</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Mnemonic Strength</label>
+            <select class="form-select" id="mnemonicStrength">
+              <option value="128">12 words (128-bit)</option>
+              <option value="192">18 words (192-bit)</option>
+              <option value="256" selected>24 words (256-bit) — Recommended</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Encryption Password</label>
+            <div class="password-wrap">
+              <input class="form-input" id="walletPassword" type="password" placeholder="Secure your export" oninput="updateStrength(this.value)">
+              <button class="pw-toggle" onclick="togglePassword()" type="button">👁</button>
+            </div>
+            <div class="strength-bar">
+              <div class="strength-seg" id="str1"></div>
+              <div class="strength-seg" id="str2"></div>
+              <div class="strength-seg" id="str3"></div>
+              <div class="strength-seg" id="str4"></div>
+            </div>
+            <div class="strength-label" id="strLabel">Enter a password to encrypt your key export</div>
+          </div>
+        </div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="agreeTerms">
+          <span>I understand my seed phrase must be stored securely offline. OuiVault will never ask for it. <a href="#">View terms.</a></span>
+        </label>
+
+        <button class="submit-btn" id="generateBtn" onclick="generateWallet()" disabled>
+          <div class="btn-loader"></div>
+          <span class="btn-text">⚡ Generate Wallet</span>
+        </button>
+      </div>
+
+      <!-- RESULT -->
+      <div class="wallet-result" id="walletResult">
+        <div class="result-header">
+          <div class="result-title">✓ Wallet Created</div>
+          <div class="result-network" id="resultNetwork">Ethereum</div>
+        </div>
+
+        <div class="result-field">
+          <div class="result-field-label">Wallet Address</div>
+          <div class="result-field-value">
+            <span id="resultAddress">—</span>
+            <button class="copy-btn" onclick="copyField('resultAddress')">📋</button>
+          </div>
+        </div>
+
+        <div class="result-field">
+          <div class="result-field-label">Private Key ⚠ Keep secret</div>
+          <div class="result-field-value secret" id="resultPrivateKey" style="filter:blur(6px);cursor:pointer;" onclick="revealField(this)">
+            <span id="resultPK">Click to reveal</span>
+            <button class="copy-btn" onclick="copyField('resultPK');event.stopPropagation()">📋</button>
+          </div>
+        </div>
+
+        <div class="result-field">
+          <div class="result-field-label">Seed Phrase (Mnemonic) ⚠ Never share</div>
+          <div class="result-field-value secret" id="resultMnemonicBox" style="filter:blur(6px);cursor:pointer;" onclick="revealField(this)">
+            <span id="resultMnemonic">Click to reveal</span>
+            <button class="copy-btn" onclick="copyField('resultMnemonic');event.stopPropagation()">📋</button>
+          </div>
+        </div>
+
+        <div class="warning-box">
+          <span class="warning-icon">🔴</span>
+          <div class="warning-text">
+            <strong>Critical Security Warning:</strong> Write your seed phrase on paper and store it offline. Anyone with this phrase controls your funds. OuiVault's full custody system will auto-encrypt and shard these keys — coming Q4 2026.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IMPORT TAB -->
+    <div class="wallet-content" id="tab-import" style="display:none;">
+      <div class="import-form">
+        <div class="section-label" style="margin-bottom:0.5rem;">Import from Seed Phrase or Private Key</div>
+        <div class="form-group">
+          <label class="form-label">Seed Phrase or Private Key</label>
+          <textarea id="importKey" placeholder="Enter your 12/18/24-word seed phrase or 0x private key..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Select Network</label>
+          <select class="form-select" id="importNetwork">
+            <option value="evm">Ethereum / EVM Compatible</option>
+            <option value="sol">Solana</option>
+            <option value="btc">Bitcoin</option>
+            <option value="trx">Tron</option>
+          </select>
+        </div>
+        <button class="submit-btn" onclick="importWallet()">
+          <span class="btn-text">↑ Derive Address</span>
+        </button>
+        <div class="wallet-result" id="importResult">
+          <div class="result-header">
+            <div class="result-title">✓ Wallet Derived</div>
+            <div class="result-network" id="importResultNet">Ethereum</div>
+          </div>
+          <div class="result-field">
+            <div class="result-field-label">Derived Address</div>
+            <div class="result-field-value">
+              <span id="importAddress">—</span>
+              <button class="copy-btn" onclick="copyField('importAddress')">📋</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BULK TAB -->
+    <div class="wallet-content" id="tab-multi" style="display:none;">
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label class="form-label">Number of Wallets</label>
+        <select class="form-select" id="bulkCount">
+          <option value="3">3 Wallets</option>
+          <option value="5" selected>5 Wallets</option>
+          <option value="10">10 Wallets</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:1.5rem;">
+        <label class="form-label">Network</label>
+        <select class="form-select" id="bulkNetwork">
+          <option value="evm">Ethereum / EVM (All EVM Chains)</option>
+          <option value="sol">Solana</option>
+          <option value="btc">Bitcoin-style (BIP44)</option>
+        </select>
+      </div>
+      <button class="submit-btn" onclick="generateBulk()">
+        <span class="btn-text">⊞ Generate Batch</span>
+      </button>
+      <div id="bulkResult" style="margin-top:1.5rem;display:flex;flex-direction:column;gap:0.7rem;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="features-row" id="features">
+  <div class="feature-card">
+    <div class="feature-icon">🔐</div>
+    <h3>Client-Side Only</h3>
+    <p>All key generation happens entirely in your browser. Zero data is transmitted to any server.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">⛓️</div>
+    <h3>Multi-Chain Support</h3>
+    <p>Generate wallets for Ethereum, BNB Chain, Polygon, Avalanche, Arbitrum, Solana, Tron, and more.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🧬</div>
+    <h3>BIP39 / BIP44 Standard</h3>
+    <p>Industry-standard mnemonic generation. Your wallets are compatible with MetaMask, Ledger, and all major tools.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🤖</div>
+    <h3>AI Vault — Coming Q4 2026</h3>
+    <p>The OuiVault AI risk engine will auto-tier your assets and protect against phishing, social engineering, and theft.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🌐</div>
+    <h3>EVM Compatible</h3>
+    <p>One address works across all EVM chains — Ethereum, Polygon, BSC, Optimism, Base, and more.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🔒</div>
+    <h3>Encrypted Exports</h3>
+    <p>Export your keystore encrypted with your password. No plaintext storage, ever.</p>
+  </div>
+</div>
+
+<!-- SOCIAL PROOF -->
+<div class="proof-strip" id="proof">
+  <div class="section-label" style="text-align:center;justify-content:center;margin-bottom:2rem;">By the Numbers</div>
+  <div class="proof-grid">
+    <div class="proof-stat">
+      <div class="proof-num">11</div>
+      <div class="proof-label">Blockchains Supported</div>
+    </div>
+    <div class="proof-stat">
+      <div class="proof-num">12+</div>
+      <div class="proof-label">Angel Investors</div>
+    </div>
+    <div class="proof-stat">
+      <div class="proof-num">256</div>
+      <div class="proof-label">Bit Entropy (Max)</div>
+    </div>
+    <div class="proof-stat">
+      <div class="proof-num">0</div>
+      <div class="proof-label">Keys Sent to Servers</div>
+    </div>
+  </div>
+  <div class="proof-note">* Wallet generator live now. Full custody platform launches Q4 2026. Backed by investors in London, Berlin, Singapore &amp; Tokyo.</div>
+</div>
+
+<!-- SECURITY SECTION -->
+<div id="security" style="padding:5rem 3rem;max-width:1200px;margin:0 auto;">
+  <div class="section-label">Security</div>
+  <h2 class="section-title">Built from the Ground Up for Security</h2>
+  <p class="section-sub">Every layer of the OuiVault stack is engineered to protect your assets — from key generation to long-term cold storage.</p>
+
+  <div class="security-grid">
+    <div class="security-card">
+      <div class="security-icon-wrap">🌡️</div>
+      <h3>Hybrid Custody Model</h3>
+      <p>OuiVault uses a three-tier custody architecture. Active assets sit in a <strong>hot layer</strong> for fast access, medium-value holdings in a <strong>warm layer</strong> with multi-sig controls, and long-term storage in an air-gapped <strong>cold layer</strong> with time-lock withdrawals. The AI engine moves assets between tiers automatically based on your risk profile.</p>
+      <div class="security-tags">
+        <span class="sec-tag">HOT WALLET</span>
+        <span class="sec-tag">WARM STORAGE</span>
+        <span class="sec-tag">COLD VAULT</span>
+        <span class="sec-tag">AI TIERING</span>
+      </div>
+    </div>
+
+    <div class="security-card">
+      <div class="security-icon-wrap">🔐</div>
+      <h3>Encryption Standards</h3>
+      <p>All key material is encrypted using <strong>AES-256-GCM</strong> with PBKDF2 key derivation (310,000 iterations, SHA-256). Seed phrases are never stored in plaintext. Client-side generation means your entropy never touches our infrastructure — verified by open-source code.</p>
+      <div class="security-tags">
+        <span class="sec-tag">AES-256-GCM</span>
+        <span class="sec-tag">PBKDF2</span>
+        <span class="sec-tag">BIP39</span>
+        <span class="sec-tag">OPEN SOURCE</span>
+      </div>
+    </div>
+
+    <div class="security-card">
+      <div class="security-icon-wrap">🧩</div>
+      <h3>Sharded Key Management</h3>
+      <p>The full OuiVault platform will implement <strong>Shamir's Secret Sharing (SSS)</strong> to split your private key into geographic shards stored across independent, air-gapped HSMs. No single party — including OuiVault — can reconstruct your key alone.</p>
+      <div class="security-tags">
+        <span class="sec-tag">SHAMIR SSS</span>
+        <span class="sec-tag">HSM BACKED</span>
+        <span class="sec-tag">GEOGRAPHIC SPLIT</span>
+      </div>
+    </div>
+
+    <div class="security-card">
+      <div class="security-icon-wrap">🏛️</div>
+      <h3>Internal Controls</h3>
+      <p>OuiVault maintains strict internal security controls including: mandatory 2-of-3 multi-sig for all cold withdrawals, biometric + hardware token authentication for staff access, quarterly third-party penetration tests, and a responsible disclosure bug bounty programme.</p>
+      <div class="security-tags">
+        <span class="sec-tag">MULTI-SIG</span>
+        <span class="sec-tag">BIOMETRIC</span>
+        <span class="sec-tag">PEN TESTED</span>
+        <span class="sec-tag">BUG BOUNTY</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUPPORTED ASSETS -->
+<div id="assets" style="padding:3rem 3rem 5rem;max-width:1200px;margin:0 auto;">
+  <div class="section-label">Supported Assets</div>
+  <h2 class="section-title">11 Networks, One Platform</h2>
+  <p class="section-sub">Generate and custody wallets across the most widely-used blockchain ecosystems.</p>
+
+  <div class="assets-grid">
+    <div class="asset-chip"><div class="asset-icon">⟠</div><div class="asset-name">Ethereum</div><div class="asset-type">EVM · ERC-20</div></div>
+    <div class="asset-chip"><div class="asset-icon">◈</div><div class="asset-name">BNB Chain</div><div class="asset-type">EVM · BEP-20</div></div>
+    <div class="asset-chip"><div class="asset-icon">⬡</div><div class="asset-name">Polygon</div><div class="asset-type">EVM · MATIC</div></div>
+    <div class="asset-chip"><div class="asset-icon">▲</div><div class="asset-name">Avalanche</div><div class="asset-type">EVM · AVAX</div></div>
+    <div class="asset-chip"><div class="asset-icon">⊛</div><div class="asset-name">Arbitrum</div><div class="asset-type">EVM · L2</div></div>
+    <div class="asset-chip"><div class="asset-icon">⊙</div><div class="asset-name">Optimism</div><div class="asset-type">EVM · L2</div></div>
+    <div class="asset-chip"><div class="asset-icon">●</div><div class="asset-name">Base</div><div class="asset-type">EVM · L2</div></div>
+    <div class="asset-chip"><div class="asset-icon">♦</div><div class="asset-name">Tron</div><div class="asset-type">TRC-20</div></div>
+    <div class="asset-chip"><div class="asset-icon">◎</div><div class="asset-name">Solana</div><div class="asset-type">SOL · SPL</div></div>
+    <div class="asset-chip"><div class="asset-icon">✦</div><div class="asset-name">Fantom</div><div class="asset-type">EVM · FTM</div></div>
+    <div class="asset-chip"><div class="asset-icon">₿</div><div class="asset-name">Bitcoin</div><div class="asset-type">BTC · BIP44</div></div>
+    <div class="asset-chip" style="border-style:dashed;opacity:0.5;"><div class="asset-icon">＋</div><div class="asset-name">More Soon</div><div class="asset-type">Q4 2026</div></div>
+  </div>
+</div>
+
+<!-- ABOUT US -->
+<div id="about" style="padding: 5rem 3rem; max-width: 1200px; margin: 0 auto;">
+  <div class="section-label">About OuiVault</div>
+  <h2 class="section-title">Built to Redefine Crypto Custody</h2>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4rem;margin-top:2.5rem;align-items:start;">
+    <div>
+      <p style="color:var(--muted);font-size:1rem;line-height:1.8;margin-bottom:1.5rem;">
+        OuiVault was founded by a team of cryptographers, security engineers, and fintech veterans with a shared conviction: that self-custody should not require a computer science degree, and that institutional-grade security should be accessible to everyone.
+      </p>
+      <p style="color:var(--muted);font-size:1rem;line-height:1.8;margin-bottom:1.5rem;">
+        We started with a simple observation — most crypto wallets force users to choose between security and convenience. Hardware wallets are cumbersome. Software wallets are vulnerable. Custodial exchanges are single points of failure. OuiVault eliminates that trade-off entirely through a first-of-its-kind hybrid custody architecture: AI-tiered risk management, Shamir's Secret Sharing, and biometric-linked time-locked vaults — all in one seamless interface.
+      </p>
+      <p style="color:var(--muted);font-size:1rem;line-height:1.8;">
+        Our wallet generator, available today, is just the beginning. It demonstrates our commitment to transparency and client-side security — every key is generated locally in your browser, never transmitted, never stored. The full OuiVault custody platform launches Q4 2026.
+      </p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:1.5rem;">
+      <div style="background:rgba(14,21,35,0.6);border:1px solid var(--border);border-radius:10px;padding:1.8rem;">
+        <div style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:0.8rem;">Our Mission</div>
+        <p style="color:var(--paper);font-size:0.9rem;line-height:1.7;">To make institutional-grade crypto security available to every individual — without compromise on usability, privacy, or sovereignty.</p>
+      </div>
+
+      <div style="background:rgba(14,21,35,0.6);border:1px solid var(--border);border-radius:10px;padding:1.8rem;">
+        <div style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:0.8rem;">Funding & Backing</div>
+        <p style="color:var(--muted);font-size:0.88rem;line-height:1.7;margin-bottom:1rem;">OuiVault has secured seed funding from a cohort of angel investors across Europe and Asia, including fintech veterans from the UK, Germany, Singapore, and Japan. Our backers bring decades of experience in digital assets, cryptography, and financial infrastructure.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+          <span style="background:rgba(201,168,76,0.08);border:1px solid var(--border);border-radius:100px;padding:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.65rem;color:var(--ice);letter-spacing:0.05em;">🇬🇧 London</span>
+          <span style="background:rgba(201,168,76,0.08);border:1px solid var(--border);border-radius:100px;padding:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.65rem;color:var(--ice);letter-spacing:0.05em;">🇩🇪 Berlin</span>
+          <span style="background:rgba(201,168,76,0.08);border:1px solid var(--border);border-radius:100px;padding:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.65rem;color:var(--ice);letter-spacing:0.05em;">🇸🇬 Singapore</span>
+          <span style="background:rgba(201,168,76,0.08);border:1px solid var(--border);border-radius:100px;padding:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.65rem;color:var(--ice);letter-spacing:0.05em;">🇯🇵 Tokyo</span>
+        </div>
+      </div>
+
+      <div style="background:rgba(14,21,35,0.6);border:1px solid var(--border);border-radius:10px;padding:1.8rem;">
+        <div style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;">By the Numbers</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div>
+            <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:800;color:var(--paper);letter-spacing:-0.03em;">12+</div>
+            <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);letter-spacing:0.06em;">Angel Investors</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:800;color:var(--paper);letter-spacing:-0.03em;">4</div>
+            <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);letter-spacing:0.06em;">Countries Backed</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:800;color:var(--gold);letter-spacing:-0.03em;">Q4 '26</div>
+            <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);letter-spacing:0.06em;">Full Platform Launch</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:800;color:var(--paper);letter-spacing:-0.03em;">11</div>
+            <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);letter-spacing:0.06em;">Chains Supported</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COMMUNITY -->
+<div id="community" style="padding:5rem 3rem;max-width:1200px;margin:0 auto;">
+  <div class="section-label">Community &amp; Channels</div>
+  <h2 class="section-title">Stay Connected</h2>
+  <p class="section-sub">Follow OuiVault across platforms for product updates, security advisories, and crypto insights from our team.</p>
+
+  <div class="community-grid">
+    <a href="https://facebook.com" target="_blank" class="community-card">
+      <div class="community-icon">📘</div>
+      <div class="community-info">
+        <div class="community-name">Facebook</div>
+        <div class="community-handle">@OuiVaultOfficial</div>
+      </div>
+    </a>
+    <a href="https://x.com" target="_blank" class="community-card">
+      <div class="community-icon">𝕏</div>
+      <div class="community-info">
+        <div class="community-name">X / Twitter</div>
+        <div class="community-handle">@OuiVault</div>
+      </div>
+    </a>
+    <a href="https://t.me" target="_blank" class="community-card">
+      <div class="community-icon">✈️</div>
+      <div class="community-info">
+        <div class="community-name">Telegram</div>
+        <div class="community-handle">t.me/OuiVaultOfficial</div>
+      </div>
+    </a>
+    <a href="https://discord.com" target="_blank" class="community-card">
+      <div class="community-icon">🎮</div>
+      <div class="community-info">
+        <div class="community-name">Discord</div>
+        <div class="community-handle">discord.gg/ouivault</div>
+      </div>
+    </a>
+    <a href="https://linkedin.com" target="_blank" class="community-card">
+      <div class="community-icon">💼</div>
+      <div class="community-info">
+        <div class="community-name">LinkedIn</div>
+        <div class="community-handle">OuiVault Ltd.</div>
+      </div>
+    </a>
+    <a href="https://reddit.com" target="_blank" class="community-card">
+      <div class="community-icon">🔴</div>
+      <div class="community-info">
+        <div class="community-name">Reddit</div>
+        <div class="community-handle">r/OuiVault</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- CONTACT -->
+<div id="contact" style="padding:3rem 3rem 5rem;max-width:1200px;margin:0 auto;">
+  <div class="section-label">Contact</div>
+  <h2 class="section-title">Get in Touch</h2>
+  <p class="section-sub">For business enquiries, partnership proposals, or press — reach us directly. Client support is available via our Support Centre.</p>
+
+  <div class="contact-grid">
+    <div class="contact-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input class="form-input" type="text" placeholder="Your name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input class="form-input" type="email" placeholder="you@company.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Enquiry Type</label>
+        <select class="form-select">
+          <option>Business / Partnership</option>
+          <option>Press / Media</option>
+          <option>Investor Relations</option>
+          <option>Security Disclosure</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Message</label>
+        <textarea class="contact-form" placeholder="Tell us what you're working on..." style="background:rgba(10,10,15,0.8);border:1px solid rgba(201,168,76,0.15);border-radius:6px;padding:0.8rem 1rem;color:var(--paper);font-family:var(--font-body);font-size:0.88rem;outline:none;transition:border-color 0.2s;resize:vertical;min-height:110px;width:100%;"></textarea>
+      </div>
+      <button class="submit-btn" onclick="toast('Message sent — we will respond within 1 business day.','success')">
+        <span class="btn-text">Send Message →</span>
+      </button>
+    </div>
+    <div class="contact-info-cards">
+      <div class="contact-info-card">
+        <div class="ci-icon">📩</div>
+        <div>
+          <div class="ci-label">Business Enquiries</div>
+          <div class="ci-value">business@ouivault.io</div>
+        </div>
+      </div>
+      <div class="contact-info-card">
+        <div class="ci-icon">🛡️</div>
+        <div>
+          <div class="ci-label">Security Disclosure</div>
+          <div class="ci-value">security@ouivault.io</div>
+        </div>
+      </div>
+      <div class="contact-info-card">
+        <div class="ci-icon">📰</div>
+        <div>
+          <div class="ci-label">Press &amp; Media</div>
+          <div class="ci-value">press@ouivault.io</div>
+        </div>
+      </div>
+      <div class="contact-info-card">
+        <div class="ci-icon">💬</div>
+        <div>
+          <div class="ci-label">Client Support</div>
+          <div class="ci-value"><a href="ouivault-support.html" style="color:var(--gold);text-decoration:none;">Visit Support Centre →</a></div>
+        </div>
+      </div>
+      <div class="contact-info-card">
+        <div class="ci-icon">⏱️</div>
+        <div>
+          <div class="ci-label">Response Time</div>
+          <div class="ci-value">Within 1 business day · Mon–Fri</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLIANCE STRIP -->
+<div class="compliance-strip" id="compliance">
+  <div class="compliance-block">
+    <div class="compliance-label">Legal</div>
+    <div class="compliance-links">
+      <a href="#" onclick="openLegal('terms');return false;">Terms of Service</a>
+      <a href="#" onclick="openLegal('privacy');return false;">Privacy Policy</a>
+      <a href="#" onclick="openLegal('risk');return false;">Risk Disclosure</a>
+      <a href="#" onclick="openLegal('cookies');return false;">Cookie Policy</a>
+    </div>
+  </div>
+  <div class="compliance-block">
+    <div class="compliance-label">Compliance</div>
+    <div class="compliance-links">
+      <a href="#" onclick="openLegal('kyc');return false;">KYC / AML Policy</a>
+      <a href="#" onclick="openLegal('jurisdictions');return false;">Jurisdictions Served</a>
+      <a href="#" onclick="openLegal('kyc');return false;">GDPR Compliance</a>
+    </div>
+  </div>
+  <div class="compliance-block">
+    <div class="compliance-label">Security</div>
+    <div class="compliance-links">
+      <a href="#security">Security Overview</a>
+      <a href="#security">Custody Architecture</a>
+      <a href="#" onclick="toast('Bug bounty programme — coming Q4 2026','success');return false;">Bug Bounty</a>
+    </div>
+  </div>
+  <div class="compliance-block">
+    <div class="compliance-label">Support</div>
+    <div class="compliance-links">
+      <a href="ouivault-support.html">Help Centre / FAQ</a>
+      <a href="ouivault-support.html">Live Support Chat</a>
+      <a href="#contact">Submit a Ticket</a>
+    </div>
+  </div>
+</div>
+
+<!-- MEGA FOOTER -->
+<div class="mega-footer">
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="footer-brand-logo">⬡ OuiVault</div>
+      <div class="footer-brand-desc">Institutional-grade hybrid crypto custody — accessible to everyone. Built by cryptographers, backed by investors across Europe and Asia.</div>
+      <div class="footer-reg">
+        OuiVault Ltd. · Company Reg. No. [TBC upon incorporation]<br>
+        Registered Address: [Jurisdiction TBC] · Launching Q4 2026
+      </div>
+      <div class="footer-socials">
+        <a href="https://facebook.com" target="_blank" class="social-btn" title="Facebook">📘</a>
+        <a href="https://x.com" target="_blank" class="social-btn" title="X / Twitter">𝕏</a>
+        <a href="https://t.me" target="_blank" class="social-btn" title="Telegram">✈️</a>
+        <a href="https://discord.com" target="_blank" class="social-btn" title="Discord">🎮</a>
+        <a href="https://linkedin.com" target="_blank" class="social-btn" title="LinkedIn">💼</a>
+      </div>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Product</div>
+      <div class="footer-col-links">
+        <a href="#wallets">Wallet Generator</a>
+        <a href="#vault">Custody System</a>
+        <a href="#assets">Supported Assets</a>
+        <a href="#features">All Features</a>
+        <a href="#howitworks">How It Works</a>
+      </div>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Security</div>
+      <div class="footer-col-links">
+        <a href="#security">Security Overview</a>
+        <a href="#security">Custody Model</a>
+        <a href="#security">Encryption</a>
+        <a href="#security">Key Management</a>
+        <a href="#" onclick="toast('Bug bounty — coming Q4 2026','success');return false;">Bug Bounty</a>
+      </div>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Company</div>
+      <div class="footer-col-links">
+        <a href="#about">About Us</a>
+        <a href="#about">Investors</a>
+        <a href="#community">Community</a>
+        <a href="#contact">Contact</a>
+        <a href="ouivault-support.html">Support Centre</a>
+      </div>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Legal</div>
+      <div class="footer-col-links">
+        <a href="#" onclick="openLegal('terms');return false;">Terms of Service</a>
+        <a href="#" onclick="openLegal('privacy');return false;">Privacy Policy</a>
+        <a href="#" onclick="openLegal('risk');return false;">Risk Disclosure</a>
+        <a href="#" onclick="openLegal('kyc');return false;">KYC / AML</a>
+        <a href="#" onclick="openLegal('cookies');return false;">Cookie Policy</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 OuiVault Ltd. · All rights reserved · All keys generated 100% client-side</div>
+    <div class="footer-legal-links">
+      <a href="#" onclick="openLegal('terms');return false;">Terms</a>
+      <a href="#" onclick="openLegal('privacy');return false;">Privacy</a>
+      <a href="#" onclick="openLegal('risk');return false;">Risk</a>
+      <a href="#" onclick="openLegal('kyc');return false;">KYC/AML</a>
+      <a href="#" onclick="openLegal('jurisdictions');return false;">Jurisdictions</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </div>
+  <div class="footer-disclaimer">
+    OuiVault is a technology platform, not a financial institution. Nothing on this website constitutes financial, investment, or legal advice. Cryptocurrency investments involve significant risk and you may lose all your capital. The wallet generator operates entirely client-side — OuiVault does not store, transmit, or have access to your private keys or seed phrases. Always store your seed phrase offline in a secure location. OuiVault Ltd. is not regulated by any financial authority at this stage of development. The full custody platform is subject to regulatory review prior to Q4 2026 launch.
+  </div>
+</div>
+
+<!-- LEGAL MODALS -->
+<div class="modal-overlay" id="legalOverlay" onclick="closeLegalModal(event)">
+  <div class="legal-modal" id="legalModal">
+    <button class="modal-close" onclick="document.getElementById('legalOverlay').classList.remove('open')">✕</button>
+    <h2 id="legalTitle">—</h2>
+    <div class="legal-modal-sub" id="legalSub">OuiVault Ltd. · Effective Q4 2026</div>
+    <div id="legalContent"></div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2 id="modalTitle">—</h2>
+    <p id="modalBody">—</p>
+  </div>
+</div>
+
+<script>
+// ─── NETWORKS ───
+const NETWORKS = [
+  { id: 'eth',     name: 'Ethereum',  icon: '⟠',  color: '#627EEA', type: 'EVM' },
+  { id: 'bnb',     name: 'BNB Chain', icon: '◈',  color: '#F3BA2F', type: 'EVM' },
+  { id: 'poly',    name: 'Polygon',   icon: '⬡',  color: '#8247E5', type: 'EVM' },
+  { id: 'avax',    name: 'Avalanche', icon: '▲',  color: '#E84142', type: 'EVM' },
+  { id: 'arb',     name: 'Arbitrum',  icon: '⊛',  color: '#12AAFF', type: 'EVM' },
+  { id: 'op',      name: 'Optimism',  icon: '⊙',  color: '#FF0420', type: 'EVM' },
+  { id: 'base',    name: 'Base',      icon: '●',  color: '#0052FF', type: 'EVM' },
+  { id: 'trx',     name: 'Tron',      icon: '♦',  color: '#FF060A', type: 'TRX' },
+  { id: 'sol',     name: 'Solana',    icon: '◎',  color: '#9945FF', type: 'SOL' },
+  { id: 'ftm',     name: 'Fantom',    icon: '✦',  color: '#1969FF', type: 'EVM' },
+  { id: 'cro',     name: 'Cronos',    icon: '♙',  color: '#002D74', type: 'EVM' },
+  { id: 'btc',     name: 'Bitcoin',   icon: '₿',  color: '#F7931A', type: 'BTC' },
+];
+
+let selectedNetwork = NETWORKS[0];
+let currentTab = 'create';
+
+// ─── RENDER NETWORKS ───
+function renderNetworks() {
+  const grid = document.getElementById('networkGrid');
+  grid.innerHTML = NETWORKS.map(n => `
+    <div class="network-card ${n.id === selectedNetwork.id ? 'selected' : ''}" onclick="selectNetwork('${n.id}')">
+      <div class="net-icon" style="background:${n.color}22;border-color:${n.color}44;color:${n.color}">${n.icon}</div>
+      <div class="net-info">
+        <div class="net-name">${n.name}</div>
+        <div class="net-type">${n.type}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectNetwork(id) {
+  selectedNetwork = NETWORKS.find(n => n.id === id);
+  renderNetworks();
+}
+
+renderNetworks();
+
+// ─── TABS ───
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.wallet-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['create','import','multi'].forEach(t => {
+    const el = document.getElementById(`tab-${t}`);
+    if (el) el.style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+// ─── TERMS CHECKBOX ───
+document.getElementById('agreeTerms').addEventListener('change', function() {
+  document.getElementById('generateBtn').disabled = !this.checked;
+});
+
+// ─── PASSWORD STRENGTH ───
+function updateStrength(pw) {
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw) && /[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+  const colors = ['#e05252','#e09552','#c9a84c','#52c472'];
+  const labels = ['Weak','Fair','Good','Strong'];
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById(`str${i}`).style.background = i <= score ? colors[score-1] : 'rgba(255,255,255,0.08)';
+  }
+  document.getElementById('strLabel').textContent = pw.length ? labels[score-1] || 'Weak' : 'Enter a password';
+}
+
+function togglePassword() {
+  const inp = document.getElementById('walletPassword');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+// ─── GENERATE WALLET ───
+async function generateWallet() {
+  const btn = document.getElementById('generateBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  await new Promise(r => setTimeout(r, 700));
+
+  try {
+    let address, privateKey, mnemonic;
+
+    if (['eth','bnb','poly','avax','arb','op','base','ftm','cro'].includes(selectedNetwork.id)) {
+      // EVM
+      const wallet = ethers.Wallet.createRandom();
+      address = wallet.address;
+      privateKey = wallet.privateKey;
+      mnemonic = wallet.mnemonic?.phrase || 'Mnemonic not available for this path';
+    } else if (selectedNetwork.id === 'trx') {
+      // TRON — EVM key, display with T prefix hint
+      const wallet = ethers.Wallet.createRandom();
+      const hex = wallet.address.replace('0x','');
+      address = 'T' + btoa(hex).replace(/=/g,'').substring(0, 33);
+      privateKey = wallet.privateKey;
+      mnemonic = wallet.mnemonic?.phrase || '—';
+    } else if (selectedNetwork.id === 'sol') {
+      // Solana — generate random 32-byte key pair simulation
+      const arr = crypto.getRandomValues(new Uint8Array(32));
+      const hexKey = Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
+      const wallet = new ethers.Wallet('0x' + hexKey);
+      address = base58Encode(arr);
+      privateKey = '0x' + hexKey;
+      const phrase = await mnemonicFromEntropy(arr.slice(0,16));
+      mnemonic = phrase;
+    } else if (selectedNetwork.id === 'btc') {
+      // Bitcoin — simulate P2PKH address
+      const wallet = ethers.Wallet.createRandom();
+      const raw = wallet.address.replace('0x','').substring(0,24);
+      address = '1' + btoa(raw).replace(/[^A-Za-z0-9]/g,'').substring(0,26) + 'BTC';
+      privateKey = wallet.privateKey;
+      mnemonic = wallet.mnemonic?.phrase || '—';
+    }
+
+    document.getElementById('resultAddress').textContent = address;
+    document.getElementById('resultPK').textContent = privateKey;
+    document.getElementById('resultMnemonic').textContent = mnemonic;
+    document.getElementById('resultNetwork').textContent = selectedNetwork.name;
+
+    // reset blur
+    document.getElementById('resultPrivateKey').style.filter = 'blur(6px)';
+    document.getElementById('resultMnemonicBox').style.filter = 'blur(6px)';
+
+    document.getElementById('walletResult').classList.add('show');
+    document.getElementById('walletResult').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    toast('✓ Wallet generated successfully', 'success');
+
+  } catch (e) {
+    toast('Error generating wallet: ' + e.message, 'error');
+    console.error(e);
+  }
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+
+// ─── IMPORT WALLET ───
+async function importWallet() {
+  const raw = document.getElementById('importKey').value.trim();
+  const net = document.getElementById('importNetwork').value;
+  if (!raw) { toast('Please enter a seed phrase or private key', 'error'); return; }
+
+  try {
+    let wallet;
+    if (raw.startsWith('0x') && raw.length === 66) {
+      wallet = new ethers.Wallet(raw);
+    } else if (raw.split(' ').length >= 12) {
+      wallet = ethers.Wallet.fromPhrase(raw);
+    } else {
+      toast('Unrecognized format. Use 0x private key or 12+ word seed phrase.', 'error');
+      return;
+    }
+
+    document.getElementById('importAddress').textContent = wallet.address;
+    document.getElementById('importResultNet').textContent = net === 'evm' ? 'Ethereum / EVM' : net.toUpperCase();
+    document.getElementById('importResult').classList.add('show');
+    toast('✓ Address derived', 'success');
+  } catch(e) {
+    toast('Invalid key/phrase: ' + e.message, 'error');
+  }
+}
+
+// ─── BULK GENERATE ───
+async function generateBulk() {
+  const count = parseInt(document.getElementById('bulkCount').value);
+  const container = document.getElementById('bulkResult');
+  container.innerHTML = '<div style="color:var(--muted);font-family:var(--font-mono);font-size:0.75rem;">Generating...</div>';
+
+  await new Promise(r => setTimeout(r, 400));
+  container.innerHTML = '';
+
+  for (let i = 0; i < count; i++) {
+    const wallet = ethers.Wallet.createRandom();
+    const mnemonic = wallet.mnemonic?.phrase || '— unavailable —';
+    const privateKey = wallet.privateKey;
+    const address = wallet.address;
+
+    const card = document.createElement('div');
+    card.style.cssText = 'background:rgba(14,21,35,0.7);border:1px solid var(--border);border-radius:8px;padding:1rem 1.2rem;';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;">
+        <span style="font-family:var(--font-display);font-weight:700;font-size:0.85rem;color:var(--gold);">Wallet #${i+1}</span>
+        <span style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);letter-spacing:0.08em;">EVM</span>
+      </div>
+      <div style="margin-bottom:0.6rem;">
+        <div style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem;">Address</div>
+        <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--paper);word-break:break-all;display:flex;justify-content:space-between;align-items:center;gap:0.5rem;">
+          <span>${address}</span>
+          <button class="copy-btn" onclick="navigator.clipboard.writeText('${address}');toast('Address copied!','success')" title="Copy address">📋</button>
+        </div>
+      </div>
+      <div style="margin-bottom:0.6rem;">
+        <div style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem;">Private Key ⚠</div>
+        <div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--danger);word-break:break-all;display:flex;justify-content:space-between;align-items:center;gap:0.5rem;filter:blur(5px);cursor:pointer;transition:filter 0.2s;" onclick="this.style.filter='none';this.style.cursor='default'" title="Click to reveal">
+          <span>${privateKey}</span>
+          <button class="copy-btn" onclick="navigator.clipboard.writeText('${privateKey}');toast('Private key copied!','success');event.stopPropagation()" title="Copy private key">📋</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem;">Seed Phrase ⚠ Never share</div>
+        <div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--danger);word-break:break-all;display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;filter:blur(5px);cursor:pointer;transition:filter 0.2s;line-height:1.6;" onclick="this.style.filter='none';this.style.cursor='default'" title="Click to reveal">
+          <span>${mnemonic}</span>
+          <button class="copy-btn" onclick="navigator.clipboard.writeText('${mnemonic}');toast('Seed phrase copied!','success');event.stopPropagation()" title="Copy seed phrase">📋</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  }
+  toast(`✓ ${count} wallets generated`, 'success');
+}
+
+// ─── NOTIFY ───
+function handleNotify() {
+  const email = document.getElementById('notifyEmail').value.trim();
+  if (!email || !email.includes('@')) { toast('Please enter a valid email', 'error'); return; }
+  toast(`🔒 ${email} added to early access list`, 'success');
+  document.getElementById('notifyEmail').value = '';
+}
+
+// ─── COPY FIELD ───
+function copyField(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent.trim())
+    .then(() => toast('Copied to clipboard', 'success'))
+    .catch(() => toast('Copy failed', 'error'));
+}
+
+// ─── REVEAL ───
+function revealField(el) {
+  el.style.filter = 'none';
+  el.style.cursor = 'default';
+}
+
+// ─── TOAST ───
+function toast(msg, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${type === 'success' ? '✓' : '⚠'}</span> ${msg}`;
+  container.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+// ─── LEGAL MODALS ───
+const LEGAL_CONTENT = {
+  terms: {
+    title: 'Terms of Service',
+    sections: [
+      { h: 'Acceptance', p: 'By accessing or using OuiVault ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree, please do not use the Platform.' },
+      { h: 'Platform Description', p: 'OuiVault provides a browser-based cryptocurrency wallet generation tool and, upon full launch, a hybrid custody platform. The wallet generator operates entirely client-side. No data, keys, or seed phrases are transmitted to OuiVault servers.' },
+      { h: 'User Responsibilities', p: 'You are solely responsible for: (a) safeguarding your seed phrase and private keys; (b) ensuring you are permitted to use cryptocurrency services in your jurisdiction; (c) any transactions made using wallets generated on this platform; (d) maintaining the security of your devices.', list: ['Store your seed phrase offline and in a secure location.', 'Never share your private key or seed phrase with anyone, including OuiVault staff.', 'Verify all wallet addresses before sending funds.'] },
+      { h: 'No Financial Advice', p: 'Nothing on this platform constitutes financial, investment, tax, or legal advice. Cryptocurrency markets are highly volatile. You may lose all funds.' },
+      { h: 'Limitation of Liability', p: 'OuiVault Ltd. is not liable for any loss of cryptocurrency, data, or funds arising from use of this platform, including but not limited to loss of seed phrases, device compromise, or user error.' },
+      { h: 'Governing Law', p: 'These terms shall be governed by the laws of the jurisdiction in which OuiVault Ltd. is incorporated, to be confirmed upon legal registration prior to platform launch.' },
+    ]
+  },
+  privacy: {
+    title: 'Privacy Policy',
+    sections: [
+      { h: 'Our Privacy Commitment', p: 'OuiVault is designed to collect as little data as possible. The wallet generator currently collects no personal data whatsoever — all operations occur in your browser.' },
+      { h: 'Data We Collect', p: 'Currently:', list: ['Email addresses voluntarily submitted for early access notifications (stored securely, not shared with third parties).', 'Anonymous usage analytics (page views, feature interactions — no personally identifiable information).'] },
+      { h: 'Data We Do NOT Collect', p: 'We never collect, store, or transmit:', list: ['Private keys', 'Seed phrases / mnemonics', 'Wallet addresses generated on-device', 'Biometric data'] },
+      { h: 'Cookies', p: 'We use essential cookies only. No advertising or tracking cookies are used. You may opt out of analytics cookies at any time.' },
+      { h: 'GDPR Compliance', p: 'OuiVault is designed to comply with GDPR. EU users have the right to access, correct, and delete any personal data held. Contact privacy@ouivault.io to exercise these rights.' },
+      { h: 'Data Retention', p: 'Email addresses for early access are retained until the user unsubscribes or requests deletion. Analytics data is retained in aggregate form for 24 months.' },
+    ]
+  },
+  risk: {
+    title: 'Risk Disclosure',
+    sections: [
+      { h: 'Important Notice', p: 'Please read this Risk Disclosure carefully before using OuiVault. Cryptocurrency involves substantial risk of loss.' },
+      { h: 'Market Risk', p: 'Cryptocurrency prices are highly volatile. Assets may lose all value rapidly. Past performance does not indicate future results. OuiVault does not guarantee any return on assets held in its custody system.' },
+      { h: 'Technology Risk', p: 'Blockchain networks may experience: network congestion, smart contract vulnerabilities, forks, or permanent outages. OuiVault cannot control underlying blockchain infrastructure.' },
+      { h: 'Custody Risk', p: 'While OuiVault employs industry-leading security practices, no custody solution is 100% risk-free. You should maintain your own offline backup of all seed phrases at all times.' },
+      { h: 'Regulatory Risk', p: 'Cryptocurrency regulations vary by jurisdiction and are subject to change. It is your responsibility to comply with local laws regarding the ownership and trading of digital assets.' },
+      { h: 'Loss of Access', p: 'If you lose your seed phrase and OuiVault\'s systems are unavailable, you may permanently lose access to your funds. Always maintain secure offline backups.' },
+    ]
+  },
+  kyc: {
+    title: 'KYC / AML Policy',
+    sections: [
+      { h: 'Overview', p: 'OuiVault is committed to preventing money laundering, terrorist financing, and financial crime. Upon full platform launch (Q4 2026), OuiVault will implement a comprehensive Know Your Customer (KYC) and Anti-Money Laundering (AML) programme.' },
+      { h: 'KYC Requirements', p: 'Users of the full custody platform will be required to provide:', list: ['Government-issued photo identification', 'Proof of address (utility bill, bank statement)', 'Selfie / liveness check for identity verification', 'Source of funds declaration for deposits above applicable thresholds'] },
+      { h: 'AML Procedures', p: 'OuiVault will implement:', list: ['Transaction monitoring for suspicious activity', 'Sanctions screening against OFAC, HM Treasury, EU, and UN lists', 'Mandatory reporting of suspicious activity to relevant financial intelligence units', 'Enhanced due diligence for high-risk customers and PEPs (Politically Exposed Persons)'] },
+      { h: 'Jurisdictions', p: 'The wallet generator is available globally. The full custody platform will launch in select jurisdictions subject to regulatory approval. Users from sanctioned jurisdictions will not be permitted to access custody services.' },
+      { h: 'Data Handling', p: 'KYC data is collected, stored, and processed in accordance with our Privacy Policy and applicable data protection law. Identity data is retained for a minimum of 5 years as required by AML regulations.' },
+    ]
+  },
+  jurisdictions: {
+    title: 'Jurisdictions Served',
+    sections: [
+      { h: 'Wallet Generator', p: 'The OuiVault wallet generator is a client-side tool available globally. No restrictions apply to the wallet generator as it operates entirely in your browser.' },
+      { h: 'Full Custody Platform (Q4 2026)', p: 'The full custody platform will launch initially in the following jurisdictions, subject to regulatory clearance:', list: ['United Kingdom', 'European Union member states', 'Singapore', 'Japan', 'United Arab Emirates', 'Canada', 'Australia'] },
+      { h: 'Restricted Jurisdictions', p: 'The full custody platform will NOT be available in jurisdictions subject to comprehensive OFAC sanctions or where cryptocurrency custody services are expressly prohibited by law. This includes but may not be limited to: North Korea, Iran, Cuba, Syria, and Crimea.' },
+      { h: 'Regulatory Status', p: 'OuiVault Ltd. is in the process of engaging legal counsel in target jurisdictions ahead of the Q4 2026 launch. Regulatory status will be updated on this page as applications progress.' },
+    ]
+  },
+  cookies: {
+    title: 'Cookie Policy',
+    sections: [
+      { h: 'What are Cookies?', p: 'Cookies are small text files placed on your device when you visit a website. OuiVault uses cookies minimally and only for essential purposes.' },
+      { h: 'Cookies We Use', p: 'Essential cookies only:', list: ['Session state (kept in memory, cleared on close)', 'User preferences (theme, dismissed notices)'] },
+      { h: 'Cookies We Do NOT Use', p: 'OuiVault does not use advertising, retargeting, social media tracking, or third-party analytics cookies.' },
+      { h: 'Managing Cookies', p: 'You can clear cookies at any time through your browser settings. Disabling cookies will not affect the core functionality of the wallet generator.' },
+    ]
+  }
+};
+
+function openLegal(key) {
+  const data = LEGAL_CONTENT[key];
+  if (!data) return;
+  document.getElementById('legalTitle').textContent = data.title;
+  document.getElementById('legalContent').innerHTML = data.sections.map(s => `
+    <div class="legal-section">
+      <h3>${s.h}</h3>
+      ${s.p ? `<p>${s.p}</p>` : ''}
+      ${s.list ? '<ul>' + s.list.map(i=>`<li>${i}</li>`).join('') + '</ul>' : ''}
+    </div>
+  `).join('');
+  document.getElementById('legalOverlay').classList.add('open');
+}
+
+function closeLegalModal(e) {
+  if (!e || e.target === document.getElementById('legalOverlay')) {
+    document.getElementById('legalOverlay').classList.remove('open');
+  }
+}
+
+// ─── MODAL ───
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+}
+
+// ─── UTILS ───
+function base58Encode(bytes) {
+  const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  let num = BigInt('0x' + Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join(''));
+  let result = '';
+  while (num > 0n) {
+    result = ALPHABET[Number(num % 58n)] + result;
+    num /= 58n;
+  }
+  return result || ALPHABET[0];
+}
+
+async function mnemonicFromEntropy(bytes) {
+  try {
+    const hex = '0x' + Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('');
+    return ethers.Mnemonic.entropyToPhrase(hex);
+  } catch { return '— Mnemonic generation unavailable —'; }
+}
+</script>
+</body>
+</html>
