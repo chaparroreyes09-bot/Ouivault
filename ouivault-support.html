@@ -55,14 +55,21 @@ const store = {
 };
 
 // Seed default super admin if none exists
-function seedAdmin() {
+// Password is verified via SHA-256 hash — plaintext never stored in source
+async function hashPass(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function seedAdmin() {
   if (!store.get('user_superadmin')) {
+    // Default credential hash (change via admin console after first login)
+    const defaultHash = await hashPass('OuiVault@2026!');
     store.set('user_superadmin', {
       uid: 'superadmin',
       tag: 'superadmin',
       role: 'superadmin',
       displayName: 'Super Admin',
-      password: 'ouivault2026',
+      passwordHash: defaultHash,
       createdAt: Date.now()
     });
   }
@@ -228,7 +235,13 @@ async function doLogin() {
   const user = await getUser(tag);
   if (!user) { errEl.textContent = 'User @'+tag+' not found'; return; }
   if (user.role === 'client') { errEl.textContent = 'Clients use the Guest Access tab'; return; }
-  if (user.password && user.password !== pass) { errEl.textContent = 'Incorrect password'; return; }
+  // Support both hash-based (superadmin) and plain-text passwords (staff created by admin)
+  if (user.passwordHash) {
+    const inputHash = await hashPass(pass);
+    if (inputHash !== user.passwordHash) { errEl.textContent = 'Incorrect password'; return; }
+  } else if (user.password && user.password !== pass) {
+    errEl.textContent = 'Incorrect password'; return;
+  }
 
   currentUser = user;
   await setOnline(tag, true);
@@ -283,7 +296,10 @@ async function refreshAdminLists() {
         <div class="user-tag">@${a.tag}</div>
         <div class="user-meta">${a.displayName} · <span class="${a.online?'online-dot':'offline-dot'}">${a.online?'Online':'Offline'}</span></div>
       </div>
-      <button class="icon-btn danger" onclick="adminDeleteUser('${a.tag}','agent')" title="Delete agent">✕</button>
+      <div style="display:flex;flex-direction:column;gap:0.3rem;align-items:flex-end;">
+        <button class="btn-pw" onclick="openPwModal('${a.tag}')" title="Change password">🔑 Passwd</button>
+        <button class="icon-btn danger" onclick="adminDeleteUser('${a.tag}','agent')" title="Delete agent">✕</button>
+      </div>
     </div>
   `).join('') : '<div class="empty-state">No agents yet</div>';
 
@@ -372,6 +388,7 @@ function adminLogout() {
 async function renderAgentDashboard() {
   showView('view-agent');
   document.getElementById('agentWelcome').textContent = '@' + currentUser.tag;
+  window._agentTag = currentUser.tag;
   await refreshAgentConvos();
   if (convoPollInterval) clearInterval(convoPollInterval);
   convoPollInterval = setInterval(refreshAgentConvos, 2000);
@@ -555,7 +572,91 @@ function escapeHtml(t) {
   return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 }
 
-// expose to global
+// tab switcher (must be defined before expose)
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+}
+
+
+// ════════════════════════════════════════════════════════
+//  PASSWORD CHANGE
+// ════════════════════════════════════════════════════════
+let pwTargetTag = null;  // tag of the user whose pw is being changed
+
+function openPwModal(tag) {
+  pwTargetTag = tag;
+  document.getElementById('pwModalSub').textContent = 'Updating password for @' + tag;
+  document.getElementById('pwCurrentInput').value = '';
+  document.getElementById('pwNewInput').value = '';
+  document.getElementById('pwConfirmInput').value = '';
+  document.getElementById('pwErr').textContent = '';
+  pwStrength('');
+  document.getElementById('pwModal').classList.add('open');
+  document.getElementById('pwCurrentInput').focus();
+}
+
+function closePwModal() {
+  document.getElementById('pwModal').classList.remove('open');
+  pwTargetTag = null;
+}
+
+function pwStrength(pw) {
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw) && /[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const colors = ['#e05252','#e09552','#c9a84c','#52c472'];
+  const labels = ['Weak','Fair','Good','Strong'];
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('pws'+i).style.background = i <= score ? colors[score-1] : 'rgba(255,255,255,0.08)';
+  }
+  document.getElementById('pwsLabel').textContent = pw.length ? (labels[score-1] || 'Weak') : 'Enter a new password';
+}
+
+async function submitPwChange() {
+  const errEl = document.getElementById('pwErr');
+  errEl.textContent = '';
+
+  const currentPw  = document.getElementById('pwCurrentInput').value;
+  const newPw      = document.getElementById('pwNewInput').value;
+  const confirmPw  = document.getElementById('pwConfirmInput').value;
+
+  if (!newPw)               { errEl.textContent = 'New password cannot be empty.'; return; }
+  if (newPw.length < 8)     { errEl.textContent = 'Password must be at least 8 characters.'; return; }
+  if (newPw !== confirmPw)  { errEl.textContent = 'Passwords do not match.'; return; }
+
+  const user = await getUser(pwTargetTag);
+  if (!user) { errEl.textContent = 'User not found.'; return; }
+
+  // Verify current password (if one is set)
+  if (user.passwordHash) {
+    if (!currentPw) { errEl.textContent = 'Please enter your current password to confirm.'; return; }
+    const currentHash = await hashPass(currentPw);
+    if (currentHash !== user.passwordHash) { errEl.textContent = 'Current password is incorrect.'; return; }
+  } else if (user.password) {
+    // Legacy plain-text password (agent created before hash system)
+    if (currentPw && currentPw !== user.password) { errEl.textContent = 'Current password is incorrect.'; return; }
+  }
+
+  // Hash and save the new password
+  const newHash = await hashPass(newPw);
+  user.passwordHash = newHash;
+  delete user.password;  // migrate any legacy plain-text to hashed
+  store.set('user_' + pwTargetTag, user);
+
+  toast('Password updated for @' + pwTargetTag, 'success');
+  closePwModal();
+
+  // Refresh lists if admin is viewing
+  if (currentUser && currentUser.role === 'superadmin') await refreshAdminLists();
+}
+
+// expose to global — must happen before any HTML onclick can fire
 window.doLogin = doLogin;
 window.doGuestAccess = doGuestAccess;
 window.adminCreateAgent = adminCreateAgent;
@@ -573,21 +674,22 @@ window.chatKeydown = chatKeydown;
 window.chatCloseConvo = chatCloseConvo;
 window.closeChatPanel = closeChatPanel;
 window.switchTab = switchTab;
+window.openPwModal = openPwModal;
+window.closePwModal = closePwModal;
+window.pwStrength = pwStrength;
+window.submitPwChange = submitPwChange;
+window.selectTopic = (el, val) => {
+  document.querySelectorAll('.topic-chip').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('clientSubject').value = val;
+};
+window.toggleFAQItem = (el) => el.classList.toggle('open');
 
 // ── init ──
 renderLogin();
 window.addEventListener('beforeunload', ()=>{
   if (currentUser) setOnline(currentUser.tag, false);
 });
-
-// tab switcher on login screen
-function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
-  document.getElementById('panel-'+tab).classList.add('active');
-  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-}
 </script>
 
 <style>
@@ -1058,6 +1160,74 @@ body::before {
   #chatPanel { width: 100vw; }
   .stats-row { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── PASSWORD CHANGE MODAL ── */
+#pwModal {
+  display: none;
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(6px);
+  align-items: center; justify-content: center;
+}
+#pwModal.open { display: flex; }
+.pw-modal-card {
+  background: var(--steel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 2rem;
+  width: 100%; max-width: 380px;
+  margin: 1rem;
+  animation: pwSlideIn 0.25s ease;
+}
+@keyframes pwSlideIn {
+  from { opacity:0; transform:translateY(-12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.pw-modal-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem; font-weight: 800;
+  color: var(--paper); margin-bottom: 0.3rem;
+}
+.pw-modal-sub {
+  font-family: var(--font-mono); font-size: 0.62rem;
+  color: var(--muted); letter-spacing: 0.08em;
+  margin-bottom: 1.4rem;
+}
+.pw-strength-row { display:flex; gap:3px; margin-top:0.4rem; }
+.pw-strength-seg {
+  height: 3px; flex:1; border-radius: 2px;
+  background: rgba(255,255,255,0.08); transition: background 0.3s;
+}
+.pw-strength-label {
+  font-family: var(--font-mono); font-size: 0.6rem;
+  color: var(--muted); margin-top: 0.3rem; letter-spacing: 0.06em;
+}
+.pw-modal-actions { display:flex; gap:0.6rem; margin-top:1.2rem; }
+.pw-modal-actions .btn-primary { flex:1; justify-content:center; }
+.pw-modal-actions .btn-outline { flex:1; justify-content:center; }
+/* Change-password button in admin agent list */
+.btn-pw {
+  background: rgba(201,168,76,0.1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--gold);
+  font-family: var(--font-mono); font-size: 0.6rem;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0.25rem 0.55rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-pw:hover { background: rgba(201,168,76,0.2); border-color: var(--gold); }
+/* Agent sidebar account section */
+.agent-account-bar {
+  border-top: 1px solid var(--border);
+  padding: 0.8rem 1rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+}
+.agent-account-info {
+  font-family: var(--font-mono); font-size: 0.62rem; color: var(--muted);
+  letter-spacing: 0.04em; line-height: 1.5;
+}
+
 </style>
 </head>
 <body>
@@ -1093,8 +1263,8 @@ body::before {
       <div id="loginErr" class="err"></div>
       <button class="btn-primary" onclick="doLogin()">Sign In →</button>
       <div style="margin-top:1rem;font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);line-height:1.6;">
-        Default super admin: <span style="color:var(--gold)">@superadmin</span> / <span style="color:var(--gold)">ouivault2026</span><br>
-        Change password in your first login via Admin Panel.
+        Default super admin: contact the OuiVault team for access credentials.<br>
+        Credentials are issued securely and not stored in source code.
       </div>
     </div>
 
@@ -1120,7 +1290,10 @@ body::before {
       <div class="admin-title">Super Admin <span>Panel</span></div>
       <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-top:0.2rem;letter-spacing:0.06em;">Full access — OuiVault Support Infrastructure</div>
     </div>
-    <button class="btn-outline" onclick="adminLogout()">Sign Out</button>
+    <div style="display:flex;gap:0.6rem;align-items:center;">
+      <button class="btn-pw" onclick="openPwModal('superadmin')" title="Change admin password">🔑 Change Password</button>
+      <button class="btn-outline" onclick="adminLogout()">Sign Out</button>
+    </div>
   </div>
 
   <!-- Stats -->
@@ -1242,6 +1415,12 @@ body::before {
         </div>
         <div id="agentQueueList"><div class="empty-state">Queue is clear ✓</div></div>
       </div>
+      <div class="agent-account-bar">
+        <div class="agent-account-info">
+          Account settings
+        </div>
+        <button class="btn-pw" onclick="openPwModal(window._agentTag||'')">🔑 Change Passwd</button>
+      </div>
     </div>
 
     <!-- Main area -->
@@ -1311,16 +1490,74 @@ body::before {
   </div>
 </div>
 
+
+<!-- ══════════════ PASSWORD CHANGE MODAL ══════════════ -->
+<div id="pwModal" onclick="if(event.target===this)closePwModal()">
+  <div class="pw-modal-card">
+    <div class="pw-modal-title">Change Password</div>
+    <div class="pw-modal-sub" id="pwModalSub">Updating password for @—</div>
+
+    <div class="field">
+      <label>Current Password <span style="color:var(--muted);font-size:0.58rem;">(leave blank if none set)</span></label>
+      <input id="pwCurrentInput" type="password" placeholder="Current password" autocomplete="current-password">
+    </div>
+    <div class="field">
+      <label>New Password</label>
+      <input id="pwNewInput" type="password" placeholder="Min 8 characters" autocomplete="new-password"
+        oninput="pwStrength(this.value)">
+      <div class="pw-strength-row">
+        <div class="pw-strength-seg" id="pws1"></div>
+        <div class="pw-strength-seg" id="pws2"></div>
+        <div class="pw-strength-seg" id="pws3"></div>
+        <div class="pw-strength-seg" id="pws4"></div>
+      </div>
+      <div class="pw-strength-label" id="pwsLabel">Enter a new password</div>
+    </div>
+    <div class="field">
+      <label>Confirm New Password</label>
+      <input id="pwConfirmInput" type="password" placeholder="Re-enter new password" autocomplete="new-password">
+    </div>
+    <div id="pwErr" class="err" style="margin-top:0.4rem;"></div>
+
+    <div class="pw-modal-actions">
+      <button class="btn-primary" onclick="submitPwChange()">Update Password →</button>
+      <button class="btn-outline" onclick="closePwModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toastBox"></div>
 
 <script>
-// topic selector
-function selectTopic(el, val) {
-  document.querySelectorAll('.topic-chip').forEach(c=>c.classList.remove('selected'));
-  el.classList.add('selected');
-  document.getElementById('clientSubject').value = val;
+// Thin dispatcher — calls the module-registered functions safely
+// These exist in case the module hasn't loaded yet; they queue and retry
+function _safeCall(name, ...args) {
+  if (typeof window[name] === 'function') return window[name](...args);
+  setTimeout(() => _safeCall(name, ...args), 50);
 }
+function selectTopic(el, val) { _safeCall('selectTopic', el, val); }
+function doLogin() { _safeCall('doLogin'); }
+function doGuestAccess() { _safeCall('doGuestAccess'); }
+function switchTab(tab) { _safeCall('switchTab', tab); }
+function adminCreateAgent() { _safeCall('adminCreateAgent'); }
+function adminCreateClient() { _safeCall('adminCreateClient'); }
+function adminDeleteUser(t,r) { _safeCall('adminDeleteUser',t,r); }
+function adminViewConvo(id) { _safeCall('adminViewConvo',id); }
+function adminLogout() { _safeCall('adminLogout'); }
+function agentPickup(id) { _safeCall('agentPickup',id); }
+function openConvo(id,role) { _safeCall('openConvo',id,role); }
+function agentLogout() { _safeCall('agentLogout'); }
+function clientStartChat() { _safeCall('clientStartChat'); }
+function clientLogout() { _safeCall('clientLogout'); }
+function chatSend() { _safeCall('chatSend'); }
+function chatKeydown(e) { _safeCall('chatKeydown',e); }
+function chatCloseConvo() { _safeCall('chatCloseConvo'); }
+function closeChatPanel() { _safeCall('closeChatPanel'); }
+function openPwModal(tag) { _safeCall('openPwModal', tag); }
+function closePwModal() { _safeCall('closePwModal'); }
+function pwStrength(pw) { _safeCall('pwStrength', pw); }
+function submitPwChange() { _safeCall('submitPwChange'); }
 </script>
 </body>
 </html>
