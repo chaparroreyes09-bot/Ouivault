@@ -18,40 +18,26 @@ import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, quer
 //  Enable Firestore → Start in test mode (rules open for 30 days)
 // ════════════════════════════════════════════════════════
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAS1voDlQ5YLVOw3O5ctID-R62DFshvp-0",
+  authDomain: "ouivault-support.firebaseapp.com",
+  projectId: "ouivault-support",
+  storageBucket: "ouivault-support.firebasestorage.app",
+  messagingSenderId: "343442559574",
+  appId: "1:343442559574:web:97899286e1e8c08857e1f7"
 };
 
-// DEMO MODE: If keys aren't set yet, run in localStorage simulation
-const DEMO_MODE = firebaseConfig.apiKey === "YOUR_API_KEY";
-
-let db = null;
-if (!DEMO_MODE) {
-  const app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
-}
+// Firebase is live — Firestore is the primary data store
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const DEMO_MODE = false;
 
 // ════════════════════════════════════════════════════════
-//  DEMO / LOCAL STORAGE LAYER (works without Firebase)
+//  FIRESTORE DATA LAYER
 // ════════════════════════════════════════════════════════
-const store = {
+// localStorage is kept only for the superadmin seed check (first-run only)
+const localStore = {
   get(k) { try { return JSON.parse(localStorage.getItem('oui_'+k)||'null'); } catch { return null; }},
   set(k,v) { localStorage.setItem('oui_'+k, JSON.stringify(v)); },
-  del(k) { localStorage.removeItem('oui_'+k); },
-  all(prefix) {
-    const out = [];
-    for (let i=0; i<localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith('oui_'+prefix)) {
-        try { out.push(JSON.parse(localStorage.getItem(k))); } catch {}
-      }
-    }
-    return out;
-  }
 };
 
 // Seed default super admin if none exists
@@ -61,18 +47,18 @@ async function hashPass(pw) {
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 async function seedAdmin() {
-  if (!store.get('user_superadmin')) {
-    // Default credential hash (change via admin console after first login)
-    const defaultHash = await hashPass('OuiVault@2026!');
-    store.set('user_superadmin', {
-      uid: 'superadmin',
-      tag: 'superadmin',
-      role: 'superadmin',
-      displayName: 'Super Admin',
-      passwordHash: defaultHash,
-      createdAt: Date.now()
-    });
-  }
+  try {
+    const ref = doc(db, 'users', 'superadmin');
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      const defaultHash = await hashPass('OuiVault@Admin2026');
+      await setDoc(ref, {
+        uid: 'superadmin', tag: 'superadmin', role: 'superadmin',
+        displayName: 'Super Admin', passwordHash: defaultHash,
+        createdAt: Date.now(), online: false
+      });
+    }
+  } catch(e) { console.warn('seedAdmin:', e); }
 }
 seedAdmin();
 
@@ -113,98 +99,116 @@ function avatar(tag) {
 }
 
 // ════════════════════════════════════════════════════════
-//  AUTH & USER MANAGEMENT (Firebase + Demo fallback)
+//  AUTH & USER MANAGEMENT — Firestore
 // ════════════════════════════════════════════════════════
 async function createUser(tag, role, displayName, password='') {
   const cleanTag = tag.toLowerCase().replace(/[^a-z0-9_]/g,'');
   if (!cleanTag) throw new Error('Invalid tag');
-  if (store.get('user_'+cleanTag)) throw new Error('Tag @'+cleanTag+' already taken');
-  const user = { uid: uid(), tag: cleanTag, role, displayName: displayName||tag, password, createdAt: now(), online: false };
-  store.set('user_'+cleanTag, user);
-  return user;
+  const ref = doc(db, 'users', cleanTag);
+  const snap = await getDoc(ref);
+  if (snap.exists()) throw new Error('Tag @'+cleanTag+' already taken');
+  let userData = { uid: uid(), tag: cleanTag, role, displayName: displayName||tag, createdAt: now(), online: false };
+  if (password) {
+    userData.passwordHash = await hashPass(password);
+  }
+  await setDoc(ref, userData);
+  return userData;
 }
 
 async function getUser(tag) {
-  return store.get('user_'+tag.toLowerCase());
+  const snap = await getDoc(doc(db, 'users', tag.toLowerCase()));
+  return snap.exists() ? snap.data() : null;
 }
 
 async function getAllUsers(role=null) {
-  const all = store.all('user_');
-  return role ? all.filter(u=>u.role===role) : all;
+  let q = role ? query(collection(db,'users'), where('role','==',role)) : collection(db,'users');
+  const snap = await getDocs(q);
+  return snap.docs.map(d=>d.data());
 }
 
 async function deleteUser(tag) {
-  store.del('user_'+tag.toLowerCase());
+  await deleteDoc(doc(db, 'users', tag.toLowerCase()));
 }
 
 async function setOnline(tag, online) {
-  const u = store.get('user_'+tag);
-  if (u) { u.online = online; u.lastSeen = now(); store.set('user_'+tag, u); }
+  try {
+    await updateDoc(doc(db,'users',tag), { online, lastSeen: now() });
+  } catch(e) {}
 }
 
 // ════════════════════════════════════════════════════════
-//  CONVERSATIONS
+//  CONVERSATIONS — Firestore
 // ════════════════════════════════════════════════════════
-function getConvos() { return store.get('convos') || []; }
-function saveConvos(c) { store.set('convos', c); }
-
 async function startConvo(clientTag) {
-  const convos = getConvos();
-  // check if open convo already exists
-  const existing = convos.find(c=>c.clientTag===clientTag && c.status==='open');
-  if (existing) return existing;
+  // Check for existing open convo
+  const q = query(collection(db,'convos'), where('clientTag','==',clientTag), where('status','==','open'));
+  const snap = await getDocs(q);
+  if (!snap.empty) return snap.docs[0].data();
+  const convoId = uid();
   const convo = {
-    id: uid(),
-    clientTag,
-    agentTag: null,
-    status: 'open',
-    subject: 'Wallet Enquiry',
-    createdAt: now(),
-    lastMessage: null,
-    lastTs: now(),
-    unreadClient: 0,
-    unreadAgent: 0
+    id: convoId, clientTag, agentTag: null, status: 'open',
+    subject: 'Wallet Enquiry', createdAt: now(), lastMessage: null,
+    lastTs: now(), unreadClient: 0, unreadAgent: 0
   };
-  convos.push(convo);
-  saveConvos(convos);
+  await setDoc(doc(db,'convos',convoId), convo);
   return convo;
 }
 
-function getConvoById(id) { return getConvos().find(c=>c.id===id); }
-
-function updateConvo(id, patch) {
-  const convos = getConvos();
-  const i = convos.findIndex(c=>c.id===id);
-  if (i>=0) { Object.assign(convos[i], patch); saveConvos(convos); return convos[i]; }
+async function getConvoById(id) {
+  const snap = await getDoc(doc(db,'convos',id));
+  return snap.exists() ? snap.data() : null;
 }
 
-function closeConvo(id) { updateConvo(id, {status:'closed', closedAt: now()}); }
+async function updateConvo(id, patch) {
+  await updateDoc(doc(db,'convos',id), patch);
+}
 
-function assignAgent(convoId, agentTag) { updateConvo(convoId, {agentTag}); }
+async function closeConvo(id) { await updateConvo(id, {status:'closed', closedAt: now()}); }
+async function assignAgent(convoId, agentTag) { await updateConvo(convoId, {agentTag}); }
+
+// Fetch all convos (for admin/agent views)
+async function getAllConvos(statusFilter=null) {
+  let q = statusFilter
+    ? query(collection(db,'convos'), where('status','==',statusFilter))
+    : collection(db,'convos');
+  const snap = await getDocs(q);
+  return snap.docs.map(d=>d.data()).sort((a,b)=>b.lastTs-a.lastTs);
+}
+
+// Real-time listener for convos (replaces polling)
+function listenConvos(callback) {
+  return onSnapshot(collection(db,'convos'), snap => {
+    const convos = snap.docs.map(d=>d.data()).sort((a,b)=>b.lastTs-a.lastTs);
+    callback(convos);
+  });
+}
 
 // ════════════════════════════════════════════════════════
-//  MESSAGES
+//  MESSAGES — Firestore (real-time)
 // ════════════════════════════════════════════════════════
-function getMsgs(convoId) { return store.get('msgs_'+convoId) || []; }
-function saveMsgs(convoId, msgs) { store.set('msgs_'+convoId, msgs); }
-
 async function sendMsg(convoId, senderTag, senderRole, text) {
   if (!text.trim()) return;
-  const msgs = getMsgs(convoId);
-  const msg = { id: uid(), convoId, senderTag, senderRole, text: text.trim(), ts: now() };
-  msgs.push(msg);
-  saveMsgs(convoId, msgs);
-  // update convo last message
-  const convos = getConvos();
-  const i = convos.findIndex(c=>c.id===convoId);
-  if (i>=0) {
-    convos[i].lastMessage = text.trim().slice(0,60);
-    convos[i].lastTs = now();
-    if (senderRole==='agent' || senderRole==='superadmin') convos[i].unreadClient = (convos[i].unreadClient||0)+1;
-    else convos[i].unreadAgent = (convos[i].unreadAgent||0)+1;
-    saveConvos(convos);
-  }
+  const msgId = uid();
+  const msg = { id: msgId, convoId, senderTag, senderRole, text: text.trim(), ts: now() };
+  await setDoc(doc(db, 'convos', convoId, 'messages', msgId), msg);
+  // update convo metadata
+  const patch = { lastMessage: text.trim().slice(0,60), lastTs: now() };
+  if (senderRole==='agent'||senderRole==='superadmin') patch.unreadClient = (activeConvo?.unreadClient||0)+1;
+  else patch.unreadAgent = (activeConvo?.unreadAgent||0)+1;
+  await updateConvo(convoId, patch);
   return msg;
+}
+
+// Real-time message listener — replaces polling entirely
+let unsubMessages = null;
+function listenMessages(convoId, callback) {
+  if (unsubMessages) unsubMessages();
+  const msgsRef = collection(db, 'convos', convoId, 'messages');
+  unsubMessages = onSnapshot(msgsRef, snap => {
+    const msgs = snap.docs.map(d=>d.data()).sort((a,b)=>a.ts-b.ts);
+    callback(msgs);
+  });
+  return unsubMessages;
 }
 
 // ════════════════════════════════════════════════════════
@@ -314,14 +318,15 @@ async function renderAdminPanel() {
   showView('view-admin');
   await refreshAdminLists();
   // poll for updates
-  if (convoPollInterval) clearInterval(convoPollInterval);
-  convoPollInterval = setInterval(refreshAdminLists, 3000);
+  // Real-time listener — instant updates for admin
+  if (convoPollInterval) { if(typeof convoPollInterval==='function') convoPollInterval(); convoPollInterval = null; }
+  convoPollInterval = listenConvos(() => refreshAdminLists());
 }
 
 async function refreshAdminLists() {
   const agents = await getAllUsers('agent');
   const clients = await getAllUsers('client');
-  const convos = getConvos();
+  const convos = await getAllConvos();
 
   // Agents list
   const agentList = document.getElementById('adminAgentList');
@@ -430,14 +435,12 @@ async function renderAgentDashboard() {
   showView('view-agent');
   document.getElementById('agentWelcome').textContent = '@' + currentUser.tag;
   window._agentTag = currentUser.tag;
-  await refreshAgentConvos();
-  if (convoPollInterval) clearInterval(convoPollInterval);
-  convoPollInterval = setInterval(refreshAgentConvos, 2000);
-}
 
-async function refreshAgentConvos() {
-  const convos = getConvos().filter(c=>c.status==='open');
-  const mine = convos.filter(c=>c.agentTag===currentUser.tag);
+  // Real-time listener for agent queue
+  if (convoPollInterval) { if(typeof convoPollInterval==='function') convoPollInterval(); convoPollInterval = null; }
+  convoPollInterval = listenConvos(convos => {
+    const open = convos.filter(c=>c.status==='open');
+    const mine = open.filter(c=>c.agentTag===currentUser.tag);
   const unassigned = convos.filter(c=>!c.agentTag);
 
   const mineList = document.getElementById('agentMineList');
@@ -445,17 +448,18 @@ async function refreshAgentConvos() {
     '<div class="empty-state">No active chats assigned to you</div>';
 
   const queueList = document.getElementById('agentQueueList');
-  queueList.innerHTML = unassigned.length ? unassigned.map(c=>`
-    <div class="convo-row open">
-      <div class="convo-icon">🟡</div>
-      <div class="convo-info">
-        <div class="convo-title">@${c.clientTag} <span class="badge-new">NEW</span></div>
-        <div class="convo-meta">${timeAgo(c.createdAt)}</div>
-        <div class="convo-preview">${c.lastMessage||'Waiting for response...'}</div>
+    queueList.innerHTML = unassigned.length ? unassigned.map(c=>`
+      <div class="convo-row open">
+        <div class="convo-icon">🟡</div>
+        <div class="convo-info">
+          <div class="convo-title">@${c.clientTag} <span class="badge-new">NEW</span></div>
+          <div class="convo-meta">${timeAgo(c.createdAt)}</div>
+          <div class="convo-preview">${c.lastMessage||'Waiting for response...'}</div>
+        </div>
+        <button class="btn-sm" onclick="agentPickup('${c.id}')">Pick Up →</button>
       </div>
-      <button class="btn-sm" onclick="agentPickup('${c.id}')">Pick Up →</button>
-    </div>
-  `).join('') : '<div class="empty-state">Queue is clear ✓</div>';
+    `).join('') : '<div class="empty-state">Queue is clear ✓</div>';
+  }); // end listenConvos
 }
 
 function renderConvoCard(c, role) {
@@ -499,10 +503,11 @@ async function renderClientView() {
   showView('view-client');
   document.getElementById('clientWelcome').textContent = '@' + currentUser.tag;
 
-  // check for existing open convo
-  let convo = getConvos().find(c=>c.clientTag===currentUser.tag && c.status==='open');
-  if (convo) {
-    activeConvo = convo;
+  // check Firestore for existing open convo
+  const q = query(collection(db,'convos'), where('clientTag','==',currentUser.tag), where('status','==','open'));
+  const snap = await getDocs(q);
+  if (!snap.empty) {
+    activeConvo = snap.docs[0].data();
     renderChatPanel('client');
   }
 }
@@ -510,15 +515,16 @@ async function renderClientView() {
 async function clientStartChat() {
   const subject = document.getElementById('clientSubject').value || 'Wallet Enquiry';
   const convo = await startConvo(currentUser.tag);
+  await updateConvo(convo.id, {subject});
   convo.subject = subject;
-  updateConvo(convo.id, {subject});
   activeConvo = convo;
   renderChatPanel('client');
 }
 
-function clientLogout() {
-  if (chatPollInterval) clearInterval(chatPollInterval);
-  setOnline(currentUser.tag, false);
+async function clientLogout() {
+  if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+  if (unsubMessages) { unsubMessages(); unsubMessages = null; }
+  if (currentUser) await setOnline(currentUser.tag, false);
   currentUser = null; activeConvo = null;
   renderLogin();
 }
@@ -544,21 +550,33 @@ function renderChatPanel(role) {
   closeBtn.style.display = (role==='agent'||role==='admin') ? 'block' : 'none';
 
   panel.classList.add('open');
-  renderMessages(role);
 
-  if (chatPollInterval) clearInterval(chatPollInterval);
-  chatPollInterval = setInterval(()=>renderMessages(role), 1500);
+  // Real-time message listener — replaces all polling
+  if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+  listenMessages(convo.id, msgs => renderMessages(msgs));
+
+  // Also listen for convo updates (e.g. agent assigned) to refresh header
+  if (role === 'client') {
+    onSnapshot(doc(db, 'convos', convo.id), snap => {
+      if (!snap.exists()) return;
+      const updated = snap.data();
+      activeConvo = updated;
+      document.getElementById('chatPanelSub').textContent = updated.agentTag
+        ? 'Agent @'+updated.agentTag+' is here to help'
+        : 'Waiting for a support agent...';
+    });
+  }
 }
 
 function closeChatPanel() {
   document.getElementById('chatPanel').classList.remove('open');
-  if (chatPollInterval) clearInterval(chatPollInterval);
+  if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+  if (unsubMessages) { unsubMessages(); unsubMessages = null; }
   activeConvo = null;
 }
 
-function renderMessages(role) {
+function renderMessages(msgs) {
   if (!activeConvo) return;
-  const msgs = getMsgs(activeConvo.id);
   const container = document.getElementById('chatMessages');
   const wasAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 60;
 
@@ -688,9 +706,8 @@ async function submitPwChange() {
 
   // Hash and save the new password
   const newHash = await hashPass(newPw);
-  user.passwordHash = newHash;
-  delete user.password;  // migrate any legacy plain-text to hashed
-  store.set('user_' + pwTargetTag, user);
+  // Save updated password hash to Firestore
+  await updateDoc(doc(db,'users',pwTargetTag), { passwordHash: newHash, password: null });
 
   toast('Password updated for @' + pwTargetTag, 'success');
   closePwModal();
@@ -733,6 +750,8 @@ window.toggleFAQItem = (el) => el.classList.toggle('open');
 renderLogin();
 window.addEventListener('beforeunload', ()=>{
   if (currentUser) setOnline(currentUser.tag, false);
+  if (unsubMessages) unsubMessages();
+  if (convoPollInterval && typeof convoPollInterval==='function') convoPollInterval();
 });
 </script>
 
