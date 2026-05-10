@@ -12,11 +12,8 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-
 // ════════════════════════════════════════════════════════
-//  🔧 FIREBASE CONFIG — Replace with your own project keys
-//  Create free project at: https://console.firebase.google.com
-//  Enable Firestore → Start in test mode (rules open for 30 days)
+// apiKey restricted to www.ouivault.com
 // ════════════════════════════════════════════════════════
 const firebaseConfig = {
   apiKey: "AIzaSyAS1voDlQ5YLVOw3O5ctID-R62DFshvp-0",
@@ -434,7 +431,8 @@ function adminLogout() {
 // ════════════════════════════════════════════════════════
 async function renderAgentDashboard() {
   showView('view-agent');
-  document.getElementById('agentWelcome').textContent = '@' + currentUser.tag;
+  const agentRating = currentUser.avgRating ? ` · ⭐ ${currentUser.avgRating} (${currentUser.totalRatings||0})` : '';
+  document.getElementById('agentWelcome').textContent = '@' + currentUser.tag + agentRating;
   window._agentTag = currentUser.tag;
 
   // Real-time listener for agent queue
@@ -561,10 +559,16 @@ function renderChatPanel(role) {
     onSnapshot(doc(db, 'convos', convo.id), snap => {
       if (!snap.exists()) return;
       const updated = snap.data();
+      const wasOpen = activeConvo?.status === 'open';
       activeConvo = updated;
       document.getElementById('chatPanelSub').textContent = updated.agentTag
         ? 'Agent @'+updated.agentTag+' is here to help'
         : 'Waiting for a support agent...';
+      // If agent closed the convo, prompt client to rate
+      if (wasOpen && updated.status === 'closed' && updated.agentTag) {
+        closeChatPanel();
+        setTimeout(() => openRatingModal(updated.id, updated.agentTag), 500);
+      }
     });
   }
 }
@@ -643,6 +647,80 @@ function switchTab(tab) {
   if (panel) panel.classList.add('active');
 }
 
+
+// ════════════════════════════════════════════════════════
+//  AGENT RATING SYSTEM
+// ════════════════════════════════════════════════════════
+let selectedRating = 0;
+let ratingConvoId = null;
+let ratingAgentTag = null;
+
+function openRatingModal(convoId, agentTag) {
+  ratingConvoId = convoId;
+  ratingAgentTag = agentTag;
+  selectedRating = 0;
+  document.getElementById('ratingAgentSub').textContent = 'How did @' + agentTag + ' do?';
+  document.getElementById('ratingComment').value = '';
+  document.getElementById('ratingErr').textContent = '';
+  document.getElementById('ratingForm').style.display = 'block';
+  document.getElementById('ratingThankyou').style.display = 'none';
+  // reset stars
+  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('ratingModal').classList.add('open');
+}
+
+function selectStar(val) {
+  selectedRating = val;
+  document.querySelectorAll('.star-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.val) <= val);
+  });
+}
+
+async function submitRating() {
+  if (!selectedRating) {
+    document.getElementById('ratingErr').textContent = 'Please select a star rating.';
+    return;
+  }
+  const comment = document.getElementById('ratingComment').value.trim();
+  const ratingData = {
+    convoId: ratingConvoId,
+    agentTag: ratingAgentTag,
+    rating: selectedRating,
+    comment,
+    ts: Date.now()
+  };
+  // Save to Firestore under ratings collection
+  try {
+    await setDoc(doc(db, 'ratings', ratingConvoId), ratingData);
+    // Update agent's average rating
+    await updateAgentRating(ratingAgentTag, selectedRating);
+  } catch(e) { console.warn('Rating save error:', e); }
+
+  // Show thank you
+  document.getElementById('ratingForm').style.display = 'none';
+  document.getElementById('ratingThankyou').style.display = 'block';
+  setTimeout(() => {
+    document.getElementById('ratingModal').classList.remove('open');
+    ratingConvoId = null; ratingAgentTag = null;
+  }, 2200);
+}
+
+async function updateAgentRating(agentTag, newScore) {
+  try {
+    const snap = await getDoc(doc(db, 'users', agentTag));
+    if (!snap.exists()) return;
+    const user = snap.data();
+    const totalRatings = (user.totalRatings || 0) + 1;
+    const ratingSum = (user.ratingSum || 0) + newScore;
+    const avgRating = Math.round((ratingSum / totalRatings) * 10) / 10;
+    await updateDoc(doc(db, 'users', agentTag), { totalRatings, ratingSum, avgRating });
+  } catch(e) { console.warn('Agent rating update error:', e); }
+}
+
+function skipRating() {
+  document.getElementById('ratingModal').classList.remove('open');
+  ratingConvoId = null; ratingAgentTag = null;
+}
 
 // ════════════════════════════════════════════════════════
 //  PASSWORD CHANGE
@@ -736,6 +814,10 @@ window.chatCloseConvo = chatCloseConvo;
 window.closeChatPanel = closeChatPanel;
 window.switchTab = switchTab;
 window.onGuestTagInput = onGuestTagInput;
+window.openRatingModal = openRatingModal;
+window.selectStar = selectStar;
+window.submitRating = submitRating;
+window.skipRating = skipRating;
 window.openPwModal = openPwModal;
 window.closePwModal = closePwModal;
 window.pwStrength = pwStrength;
@@ -1227,6 +1309,58 @@ body::before {
   .stats-row { grid-template-columns: 1fr 1fr; }
 }
 
+/* ── AGENT RATING MODAL ── */
+#ratingModal {
+  display: none; position: fixed; inset: 0; z-index: 9100;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+  align-items: center; justify-content: center;
+}
+#ratingModal.open { display: flex; }
+.rating-card {
+  background: var(--steel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 2rem; width: 100%; max-width: 360px;
+  margin: 1rem; animation: pwSlideIn 0.25s ease; text-align: center;
+}
+.rating-title {
+  font-family: var(--font-display); font-size: 1.1rem; font-weight: 800;
+  color: var(--paper); margin-bottom: 0.25rem;
+}
+.rating-sub {
+  font-family: var(--font-mono); font-size: 0.62rem;
+  color: var(--muted); letter-spacing: 0.06em; margin-bottom: 1.5rem;
+}
+.stars-row {
+  display: flex; justify-content: center; gap: 10px;
+  margin-bottom: 1rem;
+}
+.star-btn {
+  font-size: 2rem; cursor: pointer; background: none; border: none;
+  color: rgba(255,255,255,0.15); transition: all 0.15s; line-height: 1;
+  padding: 0;
+}
+.star-btn.active, .star-btn:hover { color: var(--gold); transform: scale(1.15); }
+.rating-comment {
+  width: 100%; background: rgba(10,10,15,0.6);
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--paper); font-family: var(--font-body); font-size: 0.84rem;
+  padding: 0.75rem 1rem; resize: none; min-height: 80px;
+  outline: none; transition: border-color 0.2s; margin-bottom: 1rem;
+}
+.rating-comment:focus { border-color: var(--border-hover); }
+.rating-actions { display: flex; gap: 0.6rem; }
+.rating-actions .btn-primary { flex: 1; justify-content: center; }
+.rating-actions .btn-outline { flex: 1; justify-content: center; }
+.rating-thankyou {
+  display: none; text-align: center; padding: 1rem 0;
+}
+.rating-thankyou .ty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.rating-thankyou .ty-text {
+  font-family: var(--font-display); font-size: 1rem; font-weight: 700;
+}
+.rating-thankyou .ty-sub {
+  font-size: 0.82rem; color: var(--muted); margin-top: 0.25rem;
+}
+
 /* ── PASSWORD CHANGE MODAL ── */
 #pwModal {
   display: none;
@@ -1566,6 +1700,34 @@ body::before {
 </div>
 
 
+<!-- ══════════════ AGENT RATING MODAL ══════════════ -->
+<div id="ratingModal">
+  <div class="rating-card">
+    <div id="ratingForm">
+      <div class="rating-title">Rate Your Experience</div>
+      <div class="rating-sub" id="ratingAgentSub">How did @— do?</div>
+      <div class="stars-row" id="starsRow">
+        <button class="star-btn" data-val="1" onclick="selectStar(1)">★</button>
+        <button class="star-btn" data-val="2" onclick="selectStar(2)">★</button>
+        <button class="star-btn" data-val="3" onclick="selectStar(3)">★</button>
+        <button class="star-btn" data-val="4" onclick="selectStar(4)">★</button>
+        <button class="star-btn" data-val="5" onclick="selectStar(5)">★</button>
+      </div>
+      <textarea class="rating-comment" id="ratingComment" placeholder="Optional — tell us about your experience..."></textarea>
+      <div id="ratingErr" class="err" style="margin-bottom:0.5rem;"></div>
+      <div class="rating-actions">
+        <button class="btn-primary" onclick="submitRating()">Submit Rating →</button>
+        <button class="btn-outline" onclick="skipRating()">Skip</button>
+      </div>
+    </div>
+    <div class="rating-thankyou" id="ratingThankyou">
+      <div class="ty-icon">⭐</div>
+      <div class="ty-text">Thank you for your feedback!</div>
+      <div class="ty-sub">Your rating helps us improve our service.</div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════ PASSWORD CHANGE MODAL ══════════════ -->
 <div id="pwModal" onclick="if(event.target===this)closePwModal()">
   <div class="pw-modal-card">
@@ -1629,6 +1791,10 @@ function chatSend() { _safeCall('chatSend'); }
 function chatKeydown(e) { _safeCall('chatKeydown',e); }
 function chatCloseConvo() { _safeCall('chatCloseConvo'); }
 function closeChatPanel() { _safeCall('closeChatPanel'); }
+function openRatingModal(id, tag) { _safeCall('openRatingModal', id, tag); }
+function selectStar(val) { _safeCall('selectStar', val); }
+function submitRating() { _safeCall('submitRating'); }
+function skipRating() { _safeCall('skipRating'); }
 function openPwModal(tag) { _safeCall('openPwModal', tag); }
 function closePwModal() { _safeCall('closePwModal'); }
 function pwStrength(pw) { _safeCall('pwStrength', pw); }
