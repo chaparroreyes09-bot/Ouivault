@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Careers — OuiVault | Remote Support Agent</title>
+<meta name="description" content="Join OuiVault as a Remote Customer Support Agent. Flexible hours, competitive pay, and a fast-track career path in crypto.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --vault: #080b10;
+  --steel: #0d1520;
+  --border: rgba(201,168,76,0.12);
+  --border-hover: rgba(201,168,76,0.35);
+  --gold: #c9a84c;
+  --gold-light: #e2c06a;
+  --paper: #f0ebe0;
+  --muted: rgba(240,235,224,0.45);
+  --accent: #2a6bf2;
+  --success: #22c472;
+  --font-display: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'Inter', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--vault);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(8,11,16,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2.5rem; height: 60px;
+}
+.nav-logo {
+  font-family: var(--font-display); font-size: 1.1rem; font-weight: 800;
+  color: var(--paper); text-decoration: none; letter-spacing: -0.02em;
+}
+.nav-logo span { color: var(--gold); }
+.nav-back {
+  font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted); text-decoration: none;
+  transition: color 0.2s; display: flex; align-items: center; gap: 6px;
+}
+.nav-back:hover { color: var(--gold); }
+
+/* ── HERO ── */
+.careers-hero {
+  padding: 120px 3rem 60px;
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
+}
+@media (max-width: 768px) {
+  .careers-hero { grid-template-columns: 1fr; padding: 100px 1.5rem 40px; gap: 2rem; }
+  nav { padding: 0 1.5rem; }
+}
+.hero-tag {
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--gold);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 4px 10px; display: inline-block; margin-bottom: 1.2rem;
+}
+.hero-title {
+  font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 800; line-height: 1.1; letter-spacing: -0.03em;
+  margin-bottom: 1rem;
+}
+.hero-title span { color: var(--gold); }
+.hero-sub {
+  font-size: 1rem; color: var(--muted); line-height: 1.75;
+  margin-bottom: 2rem; max-width: 480px;
+}
+.hero-stats {
+  display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem;
+}
+.stat-item { display: flex; flex-direction: column; gap: 2px; }
+.stat-val {
+  font-family: var(--font-display); font-size: 1.5rem; font-weight: 800;
+  color: var(--gold);
+}
+.stat-label {
+  font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+}
+.apply-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--gold); color: var(--vault);
+  font-family: var(--font-display); font-weight: 700; font-size: 0.9rem;
+  padding: 0.9rem 2rem; border-radius: 4px; text-decoration: none;
+  transition: all 0.2s; border: none; cursor: pointer;
+}
+.apply-btn:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(201,168,76,0.3); }
+.hero-visual {
+  background: rgba(13,21,32,0.6);
+  border: 1px solid var(--border);
+  border-radius: 16px; padding: 2rem;
+  position: relative; overflow: hidden;
+}
+.hero-visual::before {
+  content: '';
+  position: absolute; top: -40px; right: -40px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.meta-ad-label {
+  font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 1rem; display: flex; align-items: center; gap: 6px;
+}
+.meta-ad-label::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: #1877F2; display: inline-block;
+}
+.meta-ad-card {
+  background: #fff; border-radius: 10px; overflow: hidden;
+  color: #1c1e21; font-family: var(--font-body);
+}
+.meta-ad-img {
+  background: linear-gradient(135deg, #0d1520 0%, #1a2840 50%, #0d1520 100%);
+  height: 140px; display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.meta-ad-img-text {
+  font-family: var(--font-display); font-weight: 800; font-size: 1.3rem;
+  color: var(--gold); text-align: center; line-height: 1.2;
+}
+.meta-ad-img-sub {
+  font-family: var(--font-mono); font-size: 0.65rem;
+  color: rgba(240,235,224,0.6); text-align: center; margin-top: 4px;
+}
+.meta-ad-body { padding: 0.8rem 1rem; }
+.meta-ad-headline {
+  font-weight: 700; font-size: 0.9rem; color: #1c1e21;
+  margin-bottom: 0.25rem; line-height: 1.3;
+}
+.meta-ad-desc {
+  font-size: 0.75rem; color: #65676b; line-height: 1.5;
+  margin-bottom: 0.6rem;
+}
+.meta-ad-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 0.5rem; border-top: 1px solid #e4e6ea;
+}
+.meta-ad-domain { font-size: 0.7rem; color: #65676b; }
+.meta-ad-cta {
+  background: #e4e6ea; border: none; border-radius: 4px;
+  padding: 6px 14px; font-weight: 600; font-size: 0.78rem;
+  color: #1c1e21; cursor: pointer;
+}
+
+/* ── SECTIONS ── */
+.section { padding: 4rem 3rem; max-width: 1100px; margin: 0 auto; }
+@media (max-width: 768px) { .section { padding: 3rem 1.5rem; } }
+
+.section-tag {
+  font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 0.75rem;
+}
+.section-title {
+  font-family: var(--font-display); font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 800; line-height: 1.15; letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+}
+.section-sub {
+  font-size: 0.9rem; color: var(--muted); line-height: 1.75;
+  max-width: 580px; margin-bottom: 2.5rem;
+}
+
+.divider { height: 1px; background: var(--border); margin: 0 3rem; }
+
+/* ── JOB DETAILS GRID ── */
+.job-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+}
+@media (max-width: 768px) { .job-grid { grid-template-columns: 1fr; } }
+.job-card {
+  background: rgba(13,21,32,0.5);
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 1.5rem;
+}
+.job-card-icon { font-size: 1.5rem; margin-bottom: 0.75rem; }
+.job-card-title {
+  font-family: var(--font-display); font-weight: 700; font-size: 0.9rem;
+  color: var(--gold); margin-bottom: 0.5rem; letter-spacing: 0.01em;
+}
+.job-card-val {
+  font-size: 0.88rem; color: var(--paper); line-height: 1.6;
+}
+.job-card-val.mono { font-family: var(--font-mono); font-size: 0.78rem; }
+
+/* ── RESPONSIBILITIES ── */
+.resp-list { display: flex; flex-direction: column; gap: 1rem; }
+.resp-item {
+  display: flex; gap: 1rem; align-items: flex-start;
+  background: rgba(13,21,32,0.4);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 1.2rem 1.5rem;
+  transition: border-color 0.2s;
+}
+.resp-item:hover { border-color: var(--border-hover); }
+.resp-num {
+  font-family: var(--font-mono); font-size: 0.65rem;
+  color: var(--gold); min-width: 24px; padding-top: 2px;
+}
+.resp-content {}
+.resp-title {
+  font-family: var(--font-display); font-weight: 700; font-size: 0.88rem;
+  margin-bottom: 0.3rem;
+}
+.resp-desc { font-size: 0.84rem; color: var(--muted); line-height: 1.65; }
+
+/* ── REQUIREMENTS ── */
+.req-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+.req-item {
+  display: flex; gap: 0.75rem; align-items: flex-start;
+  padding: 1rem 1.25rem;
+  background: rgba(13,21,32,0.4); border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.req-check { color: var(--success); font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+.req-text { font-size: 0.84rem; line-height: 1.6; }
+.req-text strong { color: var(--paper); font-weight: 500; display: block; margin-bottom: 2px; }
+.req-text span { color: var(--muted); }
+
+/* ── CAREER PROGRESSION ── */
+.progression {
+  display: flex; gap: 0; position: relative; flex-wrap: wrap;
+}
+.prog-step {
+  flex: 1; min-width: 220px;
+  background: rgba(13,21,32,0.5);
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 1.5rem; margin: 0.5rem;
+  position: relative; transition: border-color 0.2s;
+}
+.prog-step:hover { border-color: var(--border-hover); }
+.prog-step.highlight { border-color: rgba(201,168,76,0.4); }
+.prog-month {
+  font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem;
+}
+.prog-role {
+  font-family: var(--font-display); font-weight: 800; font-size: 1rem;
+  margin-bottom: 0.5rem; line-height: 1.2;
+}
+.prog-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.65; }
+.prog-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(34,196,114,0.1); border: 1px solid rgba(34,196,114,0.3);
+  border-radius: 4px; padding: 3px 8px; margin-top: 0.75rem;
+  font-family: var(--font-mono); font-size: 0.58rem; color: var(--success);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.prog-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gold); font-size: 1.2rem; padding: 0 0.25rem; align-self: center;
+}
+
+/* ── TRAINING PACKET ── */
+.training-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+.training-card {
+  background: rgba(13,21,32,0.5);
+  border: 1px solid var(--border); border-radius: 12px;
+  overflow: hidden; transition: border-color 0.2s;
+}
+.training-card:hover { border-color: var(--border-hover); }
+.training-header {
+  padding: 1rem 1.5rem; display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.training-day {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: rgba(201,168,76,0.1); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 0.65rem; color: var(--gold);
+  font-weight: 500; flex-shrink: 0;
+}
+.training-title {
+  font-family: var(--font-display); font-weight: 700; font-size: 0.88rem;
+  line-height: 1.3;
+}
+.training-body { padding: 1.25rem 1.5rem; }
+.training-items { display: flex; flex-direction: column; gap: 0.6rem; }
+.training-item {
+  display: flex; gap: 8px; align-items: flex-start;
+  font-size: 0.82rem; color: var(--muted); line-height: 1.55;
+}
+.training-item::before {
+  content: '→'; color: var(--gold); flex-shrink: 0;
+  font-family: var(--font-mono); font-size: 0.75rem; margin-top: 1px;
+}
+.training-note {
+  margin-top: 1rem; padding: 0.75rem 1rem;
+  background: rgba(201,168,76,0.05); border: 1px solid var(--border);
+  border-radius: 8px; font-size: 0.78rem; color: var(--muted); line-height: 1.6;
+}
+.training-note strong { color: var(--gold); }
+
+/* ── APPLY SECTION ── */
+.apply-section {
+  padding: 4rem 3rem; text-align: center;
+  background: rgba(13,21,32,0.4);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.apply-title {
+  font-family: var(--font-display); font-size: clamp(1.8rem, 3vw, 2.5rem);
+  font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1rem;
+}
+.apply-title span { color: var(--gold); }
+.apply-sub {
+  font-size: 0.9rem; color: var(--muted); line-height: 1.75;
+  max-width: 540px; margin: 0 auto 0.5rem;
+}
+.apply-email-note {
+  font-family: var(--font-mono); font-size: 0.72rem;
+  color: var(--gold); margin-bottom: 2rem; letter-spacing: 0.04em;
+}
+.apply-steps {
+  display: flex; gap: 1.5rem; justify-content: center;
+  flex-wrap: wrap; margin-bottom: 2.5rem; text-align: left;
+}
+.apply-step {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: rgba(13,21,32,0.6); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1rem 1.25rem; max-width: 280px;
+}
+.apply-step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(201,168,76,0.1); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 0.65rem; color: var(--gold);
+  flex-shrink: 0;
+}
+.apply-step-text { font-size: 0.84rem; line-height: 1.6; color: var(--muted); }
+.apply-step-text strong { color: var(--paper); display: block; margin-bottom: 2px; }
+
+/* ── FOOTER ── */
+.careers-footer {
+  text-align: center; padding: 2rem 3rem;
+  font-family: var(--font-mono); font-size: 0.6rem;
+  color: var(--muted); letter-spacing: 0.06em;
+}
+.careers-footer a { color: var(--gold); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo">Oui<span>Vault</span></a>
+  <a href="/" class="nav-back">← Back to site</a>
+</nav>
+
+<!-- HERO -->
+<div class="careers-hero">
+  <div>
+    <div class="hero-tag">We're Hiring · Remote · Global</div>
+    <h1 class="hero-title">Remote Support Agent — <span>Join the Vault.</span></h1>
+    <p class="hero-sub">Help everyday people navigate the world of digital assets. No crypto expertise needed — just great people skills, a reliable connection, and a willingness to grow.</p>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-val">$11.89</div>
+        <div class="stat-label">Per Hour</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">10 hrs</div>
+        <div class="stat-label">Per Week Min.</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">30 days</div>
+        <div class="stat-label">To Promotion Based on Review</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">+15%</div>
+        <div class="stat-label">Pay Increase on Promotion</div>
+      </div>
+    </div>
+    <a href="#apply" class="apply-btn">Apply Now →</a>
+  </div>
+
+  <!-- META AD PREVIEW -->
+  <div class="hero-visual">
+    <div class="meta-ad-label">Facebook Ad Preview</div>
+    <div class="meta-ad-card">
+      <div class="meta-ad-img">
+        <div>
+          <div class="meta-ad-img-text">Remote Support Agent<br>$11.89/hr + Bonus</div>
+          <div class="meta-ad-img-sub">OuiVault · Digital Asset Platform</div>
+        </div>
+      </div>
+      <div class="meta-ad-body">
+        <div class="meta-ad-headline">Remote Support Agent | 10 Hrs/Week | $11.89/hr + Bonus | Ages 17–45</div>
+        <div class="meta-ad-desc">
+          ✅ Flexible Schedule (10 hrs/week)<br>
+          ✅ Choose Your Pay: Bi-weekly or Monthly<br>
+          ✅ Fast Track: Promote to Remote Relationship Officer in 30 days<br>
+          ✅ 15% Pay Increase + Reduced Hours on Promotion<br><br>
+          Help clients navigate digital assets. No crypto expertise needed — just great people skills.
+        </div>
+        <div class="meta-ad-footer">
+          <span class="meta-ad-domain">ouivault.com</span>
+          <button class="meta-ad-cta">Apply Now</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- JOB DETAILS -->
+<div class="section" id="role">
+  <div class="section-tag">The Role</div>
+  <h2 class="section-title">Remote Customer Support Agent</h2>
+  <p class="section-sub">First point of contact for users navigating crypto wallets, purchases, and security on OuiVault. Remote, flexible, and built for growth.</p>
+
+  <div class="job-grid">
+    <div class="job-card">
+      <div class="job-card-icon">📍</div>
+      <div class="job-card-title">Location</div>
+      <div class="job-card-val">Fully Remote — US Time Zone Required (9 AM–5 PM EST, flexible days)</div>
+    </div>
+    <div class="job-card">
+      <div class="job-card-icon">📄</div>
+      <div class="job-card-title">Contract Type</div>
+      <div class="job-card-val">Part-Time · 10 hours/week minimum</div>
+    </div>
+    <div class="job-card">
+      <div class="job-card-icon">💰</div>
+      <div class="job-card-title">Compensation</div>
+      <div class="job-card-val mono">$11.89/hr base + Performance Bonuses<br>Pay frequency: Bi-weekly or Monthly (your choice)</div>
+    </div>
+    <div class="job-card">
+      <div class="job-card-icon">🎯</div>
+      <div class="job-card-title">Ideal Candidate</div>
+      <div class="job-card-val">Ages 17–45. Remote workers, customer service veterans, Students, crypto/web3-curious individuals. Absolutely No prior crypto expertise required.</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ABOUT OUIVAULT -->
+<div class="section">
+  <div class="section-tag">About OuiVault</div>
+  <h2 class="section-title">Bridging Traditional Finance and the Decentralised World</h2>
+  <p class="section-sub">OuiVault is a premier crypto custodial wallet platform dedicated to securing digital assets for everyday users. We provide secure, user-friendly solutions for storing, transacting, and managing cryptocurrency — making financial sovereignty accessible to everyone, not just the technically fluent.</p>
+  <p style="font-size:0.88rem;color:var(--muted);line-height:1.75;">As we scale ahead of our Q4 2026 full platform launch, we're building the human layer that sets us apart — a network of dedicated Remote Support Agents and Relationship Officers who ensure every client feels supported at every step of their crypto journey.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- RESPONSIBILITIES -->
+<div class="section" id="responsibilities">
+  <div class="section-tag">Key Responsibilities</div>
+  <h2 class="section-title">What You'll Do</h2>
+  <p class="section-sub">Every interaction matters. As the first human touchpoint for OuiVault users, your work directly shapes how people experience crypto for the first time.</p>
+
+  <div class="resp-list">
+    <div class="resp-item">
+      <div class="resp-num">01</div>
+      <div class="resp-content">
+        <div class="resp-title">Client Assistance</div>
+        <div class="resp-desc">Provide remote support to clients via chat, email, and phone. Help users generate wallet addresses, set up their wallets, and resolve any platform issues they encounter along the way.</div>
+      </div>
+    </div>
+    <div class="resp-item">
+      <div class="resp-num">02</div>
+      <div class="resp-content">
+        <div class="resp-title">Transaction Support</div>
+        <div class="resp-desc">Guide clients through crypto purchases, fee structures, network selection, transfers, and best-practice platforms — always in line with industry standards and OuiVault guidelines.</div>
+      </div>
+    </div>
+    <div class="resp-item">
+      <div class="resp-num">03</div>
+      <div class="resp-content">
+        <div class="resp-title">Onboarding</div>
+        <div class="resp-desc">Help new users set up their custodial wallets and develop a solid understanding of security best practices — seed phrase protection, safe storage, and recognising scams.</div>
+      </div>
+    </div>
+    <div class="resp-item">
+      <div class="resp-num">04</div>
+      <div class="resp-content">
+        <div class="resp-title">Documentation</div>
+        <div class="resp-desc">Maintain accurate records of client interactions and onboarding statuses within the OuiVault support platform. Accurate records keep the team aligned and help us improve continuously.</div>
+      </div>
+    </div>
+    <div class="resp-item">
+      <div class="resp-num">05</div>
+      <div class="resp-content">
+        <div class="resp-title">Compliance</div>
+        <div class="resp-desc">Adhere strictly to OuiVault guidelines for secure and efficient client service. Maintain professional conduct in every interaction and escalate appropriately when required.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- REQUIREMENTS -->
+<div class="section" id="requirements">
+  <div class="section-tag">Requirements</div>
+  <h2 class="section-title">What We're Looking For</h2>
+  <p class="section-sub">We hire for attitude and communication — crypto knowledge can be taught. What can't be taught is patience, empathy, and reliability.</p>
+
+  <div class="req-grid">
+    <div class="req-item">
+      <div class="req-check">✓</div>
+      <div class="req-text">
+        <strong>Communication</strong>
+        <span>Excellent verbal and written English. Clear, warm, and professional in every channel.</span>
+      </div>
+    </div>
+    <div class="req-item">
+      <div class="req-check">✓</div>
+      <div class="req-text">
+        <strong>Tech-Savvy</strong>
+        <span>Comfortable using computers, email, and basic web applications.</span>
+      </div>
+    </div>
+    <div class="req-item">
+      <div class="req-check">✓</div>
+      <div class="req-text">
+        <strong>Availability</strong>
+        <span>Must be available during US Peak Hours minimum 10hrs weekly — 9 AM to 5 PM EST, flexible days.</span>
+      </div>
+    </div>
+    <div class="req-item">
+      <div class="req-check">✓</div>
+      <div class="req-text">
+        <strong>Reliability</strong>
+        <span>Own a reliable computer and a high-speed internet connection. Your tools are your workplace.</span>
+      </div>
+    </div>
+    <div class="req-item">
+      <div class="req-check">✓</div>
+      <div class="req-text">
+        <strong>Attitude</strong>
+        <span>Patient, empathetic, and genuinely eager to learn about cryptocurrency and help others.</span>
+      </div>
+    </div>
+    <div class="req-item">
+      <div class="req-check">✓</div>
+      <div class="req-text">
+        <strong>Experience</strong>
+        <span>Previous customer service or remote work experience is preferred but absolutely not required, highschool grads and college students are highly encouraged.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- CAREER PROGRESSION -->
+<div class="section" id="progression">
+  <div class="section-tag">Career Progression</div>
+  <h2 class="section-title">Your Path Forward</h2>
+  <p class="section-sub">This isn't a dead-end role. Top performers transition into dedicated Relationship Officers within 30 days — higher pay, reduced hours, and an assigned client portfolio.</p>
+
+  <div class="progression">
+    <div class="prog-step">
+      <div class="prog-month">Month 1</div>
+      <div class="prog-role">Remote Support Agent</div>
+      <div class="prog-desc">Complete the 5-step onboarding programme. Handle live client chats, onboarding sessions, and transaction guidance under team supervision.</div>
+      <div class="prog-badge">📍 Starting Role</div>
+    </div>
+
+    <div class="prog-arrow">→</div>
+
+    <div class="prog-step highlight">
+      <div class="prog-month">Month 2+</div>
+      <div class="prog-role">Remote Relationship Officer</div>
+      <div class="prog-desc">High performers are reviewed and promoted. Manage an assigned dedicated client portfolio with greater autonomy and higher compensation.</div>
+      <div class="prog-badge">🚀 +15% Pay · Reduced Hours · Own Portfolio</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- TRAINING PACKET -->
+<div class="section" id="training">
+  <div class="section-tag">Onboarding Programme</div>
+  <h2 class="section-title">5-Step Agent Training Packet</h2>
+  <p class="section-sub">Every new agent completes our structured 5-Step onboarding packet before going live. Each step builds on the last — by step 5 you'll be confidently handling real sessions.</p>
+
+  <div class="training-grid">
+
+    <div class="training-card">
+      <div class="training-header">
+        <div class="training-day">S·1</div>
+        <div class="training-title">Platform Orientation & Security Training</div>
+      </div>
+      <div class="training-body">
+        <div class="training-items">
+          <div class="training-item">Tour of the OuiVault platform — wallet generator, supported chains, how the UI works from a client's perspective.</div>
+          <div class="training-item">Introduction to the Support Centre — your primary work tool for all client communications.</div>
+          <div class="training-item">How to log in as an agent, manage your queue, pick up conversations, and close sessions properly.</div>
+          <div class="training-item">OuiVault security principles — what we never ask clients for (seed phrases, private keys), how to spot and report scam attempts.</div>
+          <div class="training-item">Escalation protocol — when and how to flag issues to senior staff.</div>
+        </div>
+        <div class="training-note">
+          <strong>Note:</strong> All internal communications outside the support platform — HR queries, payroll, leave requests — go directly to <strong>hr@ouivault.com</strong>. Do not use the client support channel for internal matters.
+        </div>
+      </div>
+    </div>
+
+    <div class="training-card">
+      <div class="training-header">
+        <div class="training-day">S·2</div>
+        <div class="training-title">Customer Service Best Practices</div>
+      </div>
+      <div class="training-body">
+        <div class="training-items">
+          <div class="training-item">The OuiVault tone — warm, professional, never condescending. How to communicate complex crypto concepts simply.</div>
+          <div class="training-item">Opening and closing a support session — greetings, setting expectations, professional sign-offs.</div>
+          <div class="training-item">Handling frustrated or confused clients — de-escalation language, patience techniques, and when to transfer.</div>
+          <div class="training-item">Response time standards — target reply times for chat vs email, what to say when you need a moment to investigate.</div>
+          <div class="training-item">Documentation discipline — logging every interaction accurately in the platform, tagging appropriately.</div>
+          <div class="training-item">Common client mistakes and how to address them without making the client feel embarrassed.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="training-card">
+      <div class="training-header">
+        <div class="training-day">S·3</div>
+        <div class="training-title">Crypto Basics — BTC, USDT & Wallets</div>
+      </div>
+      <div class="training-body">
+        <div class="training-items">
+          <div class="training-item">What is a blockchain? How blocks, transactions, and confirmations work in plain English.</div>
+          <div class="training-item">Bitcoin (BTC) — what it is, how it's sent, transaction fees, confirmation times, why it's first priority at OuiVault.</div>
+          <div class="training-item">USDT (Tether) — stablecoins explained, difference between USDT on TRC-20 (Tron) vs ERC-20 (Ethereum), why network choice matters when sending.</div>
+          <div class="training-item">Wallet types — hot vs cold, custodial vs non-custodial, what OuiVault generates and why it's safe.</div>
+          <div class="training-item">Seed phrases and private keys — what they are, why clients must store them offline, what happens if they're lost.</div>
+          <div class="training-item">Compatible wallets — Trust Wallet, Coinbase Wallet, Rabby, Zerion, MetaMask, Phantom — how clients import OuiVault-generated wallets into these apps.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="training-card">
+      <div class="training-header">
+        <div class="training-day">S·4</div>
+        <div class="training-title">Transaction Processing Workflow</div>
+      </div>
+      <div class="training-body">
+        <div class="training-items">
+          <div class="training-item">Step-by-step: how to guide a client through their first crypto purchase — which exchanges to recommend (Binance, Coinbase, Kraken) and why.</div>
+          <div class="training-item">Network fees (gas fees) — what they are, why they fluctuate, how to advise clients on timing large transactions.</div>
+          <div class="training-item">Sending and receiving — address verification, double-checking networks before sending, the irreversibility of blockchain transactions.</div>
+          <div class="training-item">Common errors — wrong network, insufficient gas, pending transactions — how to explain and resolve each.</div>
+          <div class="training-item">What to do when a transaction is stuck — mempool basics, replace-by-fee, when to tell the client to wait vs escalate.</div>
+          <div class="training-item">Red flags — signs a client may be a target of a scam. Protocol for addressing this sensitively and reporting internally.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="training-card" style="grid-column: 1 / -1;">
+      <div class="training-header">
+        <div class="training-day">S·5</div>
+        <div class="training-title">Live Support</div>
+      </div>
+      <div class="training-body">
+        <div class="training-items">
+          <div class="training-item">Final onboarding sign-off — confirm platform access, verify documentation habits, confirm HR and escalation contacts are saved.</div>
+          <div class="training-item">You're live — welcome to the OuiVault support team.</div>
+        </div>
+        <div class="training-note" style="margin-top:1rem;">
+          <strong>Remember:</strong> Your work tool is the OuiVault Support Centre. All client communications happen there. Any internal queries — payroll, scheduling, HR, performance reviews — go to <strong>hr@ouivault.com</strong>. Never mix the two channels.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- APPLY SECTION -->
+<div class="apply-section" id="apply">
+  <div class="section-tag" style="display:inline-block;margin-bottom:0.75rem;">Apply Now</div>
+  <h2 class="apply-title">Ready to Join <span>OuiVault?</span></h2>
+  <p class="apply-sub">Send your CV or proof of employability directly to our recruitment team. We review every application and respond within 3–5 business days.</p>
+  <p class="apply-email-note">recruitment@ouivault.com</p>
+
+  <div class="apply-steps">
+    <div class="apply-step">
+      <div class="apply-step-num">1</div>
+      <div class="apply-step-text">
+        <strong>Prepare your CV</strong>
+        Include any customer service, remote work, educational level or tech experience. No crypto background required — just show us who you are.
+      </div>
+    </div>
+    <div class="apply-step">
+      <div class="apply-step-num">2</div>
+      <div class="apply-step-text">
+        <strong>Send your application</strong>
+        Email your CV to recruitment@ouivault.com with the subject line: <em>"Remote Support Agent Application"</em>
+      </div>
+    </div>
+    <div class="apply-step">
+      <div class="apply-step-num">3</div>
+      <div class="apply-step-text">
+        <strong>We'll be in touch</strong>
+        Our team reviews every application. Shortlisted candidates are contacted within 2–3 business days for a brief video or voice call.
+      </div>
+    </div>
+  </div>
+
+  <a href="mailto:recruitment@ouivault.com?subject=Remote Support Agent Application" class="apply-btn" style="font-size:1rem;padding:1rem 2.5rem;">
+    Send Application →
+  </a>
+</div>
+
+<!-- FOOTER -->
+<div class="careers-footer">
+  © 2026 OuiVault Ltd. · <a href="/">ouivault.com</a> · All positions are remote and subject to availability.
+  <br><br>
+  OuiVault is an equal opportunity employer. We welcome applicants of all backgrounds, ages 17–55.
+</div>
+
+</body>
+</html>
