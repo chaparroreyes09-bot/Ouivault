@@ -12,6 +12,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+
 // ════════════════════════════════════════════════════════
 //  🔧 FIREBASE CONFIG — Replace with your own project keys
 //  Create free project at: https://console.firebase.google.com
@@ -476,14 +477,14 @@ function renderConvoCard(c, role) {
 }
 
 async function agentPickup(convoId) {
-  assignAgent(convoId, currentUser.tag);
+  await assignAgent(convoId, currentUser.tag);
   toast('Chat assigned to you','success');
-  await refreshAgentConvos();
-  openConvo(convoId, 'agent');
+  await openConvo(convoId, 'agent');
 }
 
-function openConvo(id, role) {
-  activeConvo = getConvoById(id);
+async function openConvo(id, role) {
+  activeConvo = await getConvoById(id);
+  if (!activeConvo) { toast('Could not load conversation','error'); return; }
   renderChatPanel(role);
 }
 
