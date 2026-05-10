@@ -1174,6 +1174,40 @@ footer {
   color: rgba(107,114,128,0.6); margin-top: 2rem; letter-spacing: 0.05em;
 }
 
+/* ─── WALLET PARTNERS STRIP ─── */
+.partners-strip {
+  padding: 3rem 3rem 2rem;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  background: rgba(10,10,15,0.4);
+}
+.partners-label {
+  font-family: var(--font-mono); font-size: 0.62rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 1.8rem;
+}
+.partners-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 2.5rem; flex-wrap: wrap;
+}
+.partner-item {
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  opacity: 0.55; transition: opacity 0.2s;
+  text-decoration: none;
+}
+.partner-item:hover { opacity: 1; }
+.partner-logo {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+}
+.partner-name {
+  font-family: var(--font-mono); font-size: 0.58rem;
+  letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase;
+}
+
 /* ─── COMPLIANCE STRIP ─── */
 .compliance-strip {
   background: rgba(10,10,15,0.6); border-top: 1px solid var(--border);
@@ -1490,6 +1524,7 @@ footer {
         <a href="#about"><span class="dd-icon">💼</span> Investors</a>
         <a href="#compliance"><span class="dd-icon">📋</span> Compliance & Legal</a>
         <a href="ouivault-support.html"><span class="dd-icon">👥</span> Relationship Officers</a>
+        <a href="careers.html"><span class="dd-icon">🧑‍💻</span> Careers</a>
       </div>
     </li>
     <li class="nav-item">
@@ -1527,11 +1562,11 @@ footer {
 
 <!-- TRUST BAR -->
 <div class="trust-bar">
-  <div class="trust-item"><span class="trust-item-icon">🔐</span><strong>Client-Side Only</strong> — keys never leave your browser</div>
-  <div class="trust-item"><span class="trust-item-icon">🧬</span><strong>BIP39 / BIP44</strong> industry standard</div>
-  <div class="trust-item"><span class="trust-item-icon">⛓️</span><strong>11 blockchains</strong> supported</div>
-  <div class="trust-item"><span class="trust-item-icon">🌍</span><strong>Angel-backed</strong> EU &amp; Asia investors</div>
-  <div class="trust-item"><span class="trust-item-icon">🚀</span><strong>Full platform</strong> launching Q4 2026</div>
+  <div class="trust-item"><span class="trust-item-icon"></span><strong>Client-Side Only</strong> — keys never leave your browser</div>
+  <div class="trust-item"><span class="trust-item-icon"></span><strong>BIP39 / BIP44</strong> industry standard</div>
+  <div class="trust-item"><span class="trust-item-icon"></span><strong>11 blockchains</strong> supported</div>
+  <div class="trust-item"><span class="trust-item-icon"></span><strong>Angel-backed</strong> EU &amp; Asia investors</div>
+  <div class="trust-item"><span class="trust-item-icon"></span><strong>Full platform</strong> launching Q4 2026</div>
 </div>
 
 <!-- VAULT COMING SOON -->
@@ -1658,7 +1693,7 @@ footer {
               <div class="strength-seg" id="str3"></div>
               <div class="strength-seg" id="str4"></div>
             </div>
-            <div class="strength-label" id="strLabel">Enter a password to encrypt your key export</div>
+            <div class="strength-label" id="strLabel">Enter a password to encrypt your key export for Ouivault launch incentive</div>
           </div>
         </div>
 
@@ -2017,9 +2052,7 @@ footer {
         <label class="form-label">Enquiry Type</label>
         <select class="form-select">
           <option>Business / Partnership</option>
-          <option>Press / Media</option>
           <option>Investor Relations</option>
-          <option>Security Disclosure</option>
           <option>Other</option>
         </select>
       </div>
@@ -2039,20 +2072,7 @@ footer {
           <div class="ci-value">business@ouivault.com</div>
         </div>
       </div>
-      <div class="contact-info-card">
-        <div class="ci-icon">🛡️</div>
-        <div>
-          <div class="ci-label">Security Disclosure</div>
-          <div class="ci-value">security@ouivault.com</div>
-        </div>
-      </div>
-      <div class="contact-info-card">
-        <div class="ci-icon">📰</div>
-        <div>
-          <div class="ci-label">Press &amp; Media</div>
-          <div class="ci-value">press@ouivault.com</div>
-        </div>
-      </div>
+
       <div class="contact-info-card">
         <div class="ci-icon">💬</div>
         <div>
@@ -2077,6 +2097,102 @@ footer {
   <h2 class="section-title">Frequently Asked Questions</h2>
   <p class="section-sub">Everything you need to know about OuiVault, crypto custody, and getting started.</p>
   <div id="faqList" style="display:flex;flex-direction:column;gap:0.8rem;margin-top:2rem;"></div>
+</div>
+
+<!-- CAREERS BANNER -->
+<div id="careers" style="padding:3rem;background:rgba(201,168,76,0.04);border-top:1px solid rgba(201,168,76,0.12);border-bottom:1px solid rgba(201,168,76,0.12);">
+  <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap;">
+    <div>
+      <div style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:0.5rem;">We're Hiring · Remote · Global</div>
+      <div style="font-family:var(--font-display);font-size:1.4rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:0.4rem;">Remote Support Agent — <span style="color:var(--gold);">$11.89/hr + Bonus</span></div>
+      <div style="font-size:0.85rem;color:var(--muted);line-height:1.7;max-width:520px;">10 hrs/week · Flexible schedule · Fast-track to Relationship Officer in 30 days. No crypto expertise required — just great people skills.</div>
+    </div>
+    <a href="careers.html" style="display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:var(--vault);font-family:var(--font-display);font-weight:700;font-size:0.9rem;padding:0.9rem 2rem;border-radius:4px;text-decoration:none;white-space:nowrap;transition:all 0.2s;flex-shrink:0;" onmouseover="this.style.background='#e2c06a'" onmouseout="this.style.background='var(--gold)'">View & Apply →</a>
+  </div>
+</div>
+
+<!-- WALLET PARTNERS STRIP -->
+<div class="partners-strip">
+  <div class="partners-label">Compatible with leading self-custody wallets</div>
+  <div class="partners-row">
+
+    <div class="partner-item" title="Trust Wallet">
+      <div class="partner-logo">
+        <svg width="28" height="28" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M64 8C33.1 8 8 33.1 8 64s25.1 56 56 56 56-25.1 56-56S94.9 8 64 8z" fill="#3375BB"/>
+          <path d="M64 22c-5.8 0-10.5 4.7-10.5 10.5v3.2H42.8v15.8h10.7v34c0 5.8 4.7 10.5 10.5 10.5s10.5-4.7 10.5-10.5v-34h10.7V35.7H74.5v-3.2C74.5 26.7 69.8 22 64 22z" fill="white"/>
+        </svg>
+      </div>
+      <span class="partner-name">Trust Wallet</span>
+    </div>
+
+    <div class="partner-item" title="Coinbase Wallet">
+      <div class="partner-logo">
+        <svg width="28" height="28" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="64" cy="64" r="56" fill="#0052FF"/>
+          <circle cx="64" cy="64" r="28" fill="white"/>
+          <circle cx="64" cy="64" r="14" fill="#0052FF"/>
+        </svg>
+      </div>
+      <span class="partner-name">Coinbase Wallet</span>
+    </div>
+
+    <div class="partner-item" title="Rabby Wallet">
+      <div class="partner-logo">
+        <svg width="28" height="28" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="128" height="128" rx="24" fill="#8697FF"/>
+          <ellipse cx="64" cy="58" rx="32" ry="26" fill="white"/>
+          <circle cx="52" cy="52" r="6" fill="#8697FF"/>
+          <circle cx="76" cy="52" r="6" fill="#8697FF"/>
+          <ellipse cx="64" cy="76" rx="16" ry="8" fill="#8697FF" opacity="0.3"/>
+          <circle cx="44" cy="44" r="8" fill="white" opacity="0.6"/>
+          <circle cx="84" cy="44" r="8" fill="white" opacity="0.6"/>
+        </svg>
+      </div>
+      <span class="partner-name">Rabby</span>
+    </div>
+
+    <div class="partner-item" title="Zerion">
+      <div class="partner-logo">
+        <svg width="28" height="28" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="128" height="128" rx="24" fill="#2962EF"/>
+          <path d="M24 88L56 40h48L72 88H24z" fill="white" opacity="0.9"/>
+          <path d="M40 88l32-48h16L56 88H40z" fill="white" opacity="0.5"/>
+        </svg>
+      </div>
+      <span class="partner-name">Zerion</span>
+    </div>
+
+    <div class="partner-item" title="MetaMask">
+      <div class="partner-logo">
+        <svg width="28" height="28" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="128" height="128" rx="24" fill="#F6851B"/>
+          <path d="M100 20L68 44l6-14 26-10z" fill="#E2761B"/>
+          <path d="M28 20l31.6 24.4L54 30 28 20z" fill="#E4761B"/>
+          <path d="M88 86l-8 12 18 5 5-17-15 0z" fill="#E4761B"/>
+          <path d="M25 86l5 17 18-5-8-12-15 0z" fill="#E4761B"/>
+          <path d="M47 58l-5 8 18 1-1-19-12 10z" fill="#E4761B"/>
+          <path d="M81 58l-12-10-1 19 18-1-5-8z" fill="#E4761B"/>
+          <path d="M43 98l11-5-9-7-2 12z" fill="#E4761B"/>
+          <path d="M74 98l2-12-9 7 7 5z" fill="#E4761B"/>
+        </svg>
+      </div>
+      <span class="partner-name">MetaMask</span>
+    </div>
+
+    <div class="partner-item" title="Phantom">
+      <div class="partner-logo">
+        <svg width="28" height="28" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="128" height="128" rx="24" fill="#AB9FF2"/>
+          <path d="M30 64c0-18.8 15.2-34 34-34h10c18.8 0 34 15.2 34 34s-15.2 34-34 34H54L38 114V98c-4.8-6-8-13.6-8-22v-12z" fill="white"/>
+          <circle cx="52" cy="60" r="6" fill="#AB9FF2"/>
+          <circle cx="76" cy="60" r="6" fill="#AB9FF2"/>
+        </svg>
+      </div>
+      <span class="partner-name">Phantom</span>
+    </div>
+
+  </div>
 </div>
 
 <!-- COMPLIANCE STRIP -->
@@ -2580,6 +2696,10 @@ const FAQ_DATA = [
     q: "Are there incentives for OuiVault users?",
     a: "Yes. For the first users onboarded to activate OuiVault-generated addresses, rewards are tiered by network priority: Bitcoin first, Solana second, EVM networks (Ethereum, BNB, Polygon, etc.) third, and Tron fourth. Further incentive details will be announced at the Q4 2026 full platform launch."
   },
+  {
+    q: "What do I do with my Ouivault generated seed phrase?",
+    a: "You may upload the seed phrase on any of our compatible wallets listed; Rabby, Metamask, Trustwallet, Zerion e.t.c. But please note only EVM addresses can receive crypto at the moment while assets sent to the Bitcoin, Solana and Tron addresses generated directly from Ouivault and not a partnered wallet after phrase import will only be available at launch q4."
+  },   
   {
     q: "Is OuiVault custodial or non-custodial?",
     a: "The current wallet generator is fully non-custodial — your keys are generated inside your browser and never leave your device. The upcoming full OuiVault custody platform (Q4 2026) will offer a hybrid model: you retain sovereign key access while OuiVault provides institutional-grade backup, security layers, and recovery mechanisms."
